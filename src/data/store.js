@@ -24,6 +24,7 @@ export function generateId(prefix = 'id') {
 export function getInitialDemoData() {
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
+  const todayHour = (h, m = 0) => new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).toISOString();
 
   return {
     isOnboarded: true,
@@ -98,7 +99,7 @@ export function getInitialDemoData() {
           { productId: 'prod-1', name: 'Indomie Goreng', quantity: 6, price: 3500, subtotal: 21000 },
           { productId: 'prod-3', name: 'Telur', quantity: 8, price: 3000, subtotal: 24000 }
         ],
-        createdAt: new Date(now.getTime() - 7 * 3600000).toISOString()
+        createdAt: todayHour(7, 0)
       },
       {
         id: 'sale-2',
@@ -111,7 +112,7 @@ export function getInitialDemoData() {
           { productId: 'prod-5', name: 'Kopi', quantity: 3, price: 5000, subtotal: 15000 },
           { productId: 'prod-4', name: 'Es Teh', quantity: 5, price: 4000, subtotal: 20000 }
         ],
-        createdAt: new Date(now.getTime() - 6 * 3600000).toISOString()
+        createdAt: todayHour(8, 0)
       },
       {
         id: 'sale-3',
@@ -124,7 +125,7 @@ export function getInitialDemoData() {
           { productId: 'prod-1', name: 'Indomie Goreng', quantity: 10, price: 3500, subtotal: 35000 },
           { productId: 'prod-2', name: 'Indomie Soto', quantity: 10, price: 3500, subtotal: 35000 }
         ],
-        createdAt: new Date(now.getTime() - 5 * 3600000).toISOString()
+        createdAt: todayHour(9, 0)
       },
       {
         id: 'sale-4',
@@ -137,7 +138,7 @@ export function getInitialDemoData() {
           { productId: 'prod-3', name: 'Telur', quantity: 14, price: 3000, subtotal: 42000 },
           { productId: 'prod-5', name: 'Kopi', quantity: 4, price: 5000, subtotal: 20000 }
         ],
-        createdAt: new Date(now.getTime() - 4 * 3600000).toISOString()
+        createdAt: todayHour(10, 0)
       },
       {
         id: 'sale-5',
@@ -150,7 +151,7 @@ export function getInitialDemoData() {
           { productId: 'prod-4', name: 'Es Teh', quantity: 5, price: 4000, subtotal: 20000 },
           { productId: 'prod-1', name: 'Indomie Goreng', quantity: 10, price: 3500, subtotal: 35000 }
         ],
-        createdAt: new Date(now.getTime() - 3 * 3600000).toISOString()
+        createdAt: todayHour(11, 0)
       },
       {
         id: 'sale-6',
@@ -163,7 +164,7 @@ export function getInitialDemoData() {
           { productId: 'prod-3', name: 'Telur', quantity: 10, price: 3000, subtotal: 30000 },
           { productId: 'prod-5', name: 'Kopi', quantity: 10, price: 5000, subtotal: 50000 }
         ],
-        createdAt: new Date(now.getTime() - 2 * 3600000).toISOString()
+        createdAt: todayHour(12, 0)
       },
       {
         id: 'sale-7',
@@ -176,7 +177,7 @@ export function getInitialDemoData() {
           { productId: 'prod-2', name: 'Indomie Soto', quantity: 10, price: 3500, subtotal: 35000 },
           { productId: 'prod-5', name: 'Kopi', quantity: 5, price: 5000, subtotal: 25000 }
         ],
-        createdAt: new Date(now.getTime() - 1 * 3600000).toISOString()
+        createdAt: todayHour(13, 0)
       },
       {
         id: 'sale-8',
@@ -190,7 +191,7 @@ export function getInitialDemoData() {
           { productId: 'prod-3', name: 'Telur', quantity: 10, price: 3000, subtotal: 30000 },
           { productId: 'prod-5', name: 'Kopi', quantity: 2, price: 5000, subtotal: 10000 }
         ],
-        createdAt: new Date(now.getTime() - 30 * 60000).toISOString()
+        createdAt: todayHour(14, 0)
       }
     ],
     // Total expenses today: Rp125.000 -> Sisa kas = Rp487.000 - Rp125.000 = Rp362.000
@@ -200,14 +201,14 @@ export function getInitialDemoData() {
         category: 'Belanja barang',
         description: 'Kulakan telur & mie soto',
         amount: 100000,
-        createdAt: new Date(now.getTime() - 8 * 3600000).toISOString()
+        createdAt: todayHour(6, 30)
       },
       {
         id: 'exp-2',
         category: 'Listrik',
         description: 'Beli token listrik warung',
         amount: 25000,
-        createdAt: new Date(now.getTime() - 4 * 3600000).toISOString()
+        createdAt: todayHour(10, 30)
       }
     ],
     // 3 Debtors totaling Rp85.000: Budi Rp25k, Bu Siti Rp18k, Pak Joko Rp42k

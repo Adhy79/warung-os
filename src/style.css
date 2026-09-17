@@ -357,8 +357,373 @@ html, body {
 }
 
 /* ==========================================================================
-   BERANDA (DASHBOARD)
+   BERANDA (KABAR WARUNG HARI INI)
    ========================================================================== */
+.hero-laci-card {
+  background: linear-gradient(135deg, #FFFBF7 0%, #FFF3EC 100%);
+  border: 2.5px solid var(--color-primary-border);
+  border-radius: var(--radius-xl);
+  padding: 22px 18px;
+  text-align: center;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-laci-card .hero-laci-label {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.hero-laci-card .hero-laci-amount {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--color-text-main);
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin: 6px 0 8px 0;
+}
+
+.hero-laci-card .hero-laci-subtext {
+  font-size: 0.92rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+/* Empty Warung Card */
+.empty-warung-card {
+  background: #FFFFFF;
+  border: 2px dashed var(--color-primary-border);
+  border-radius: var(--radius-xl);
+  padding: 20px 16px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.empty-warung-badge {
+  display: inline-block;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-light);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  margin-bottom: 12px;
+}
+
+.empty-warung-desc {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.empty-warung-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Shortcut Ngomong Aja Card */
+.ngomong-shortcut-card {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border: 2px solid #F59E0B;
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.ngomong-shortcut-card:active {
+  transform: scale(0.98);
+}
+
+.ngomong-shortcut-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ngomong-shortcut-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.ngomong-shortcut-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #78350F;
+  line-height: 1.2;
+}
+
+.ngomong-shortcut-sub {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #92400E;
+}
+
+.btn-bicara-action {
+  background: #E05A2B;
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 16px;
+  font-size: 1rem;
+  font-weight: 800;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 3px 10px rgba(224, 90, 43, 0.3);
+  flex-shrink: 0;
+}
+
+.btn-bicara-action:active {
+  transform: scale(0.95);
+}
+
+/* Ringkasan Hari Ini */
+.ringkasan-card {
+  background: #FFFFFF;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 18px 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.ringkasan-header {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--color-text-main);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ringkasan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ringkasan-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--color-bg-app);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.ringkasan-item-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ringkasan-item-val {
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.ringkasan-item-val.val-sales {
+  color: var(--color-text-main);
+}
+
+.ringkasan-item-val.val-masuk {
+  color: #047857;
+}
+
+.ringkasan-item-val.val-keluar {
+  color: #C24417;
+}
+
+/* Section Perlu Dilihat */
+.perlu-card {
+  background: #FFFFFF;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 18px 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.perlu-header {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--color-text-main);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.perlu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.perlu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.perlu-item:active {
+  transform: scale(0.98);
+}
+
+.perlu-item.stock-item {
+  background: #FFFBEB;
+  border: 1.5px solid #FDE68A;
+}
+
+.perlu-item.debt-item {
+  background: #FEF2F2;
+  border: 1.5px solid #FECACA;
+}
+
+.perlu-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.perlu-item-emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.perlu-item-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+  line-height: 1.3;
+}
+
+.perlu-item-sub {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.stock-item .perlu-item-sub {
+  color: #B45309;
+}
+
+.debt-item .perlu-item-sub {
+  color: #B91C1C;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.perlu-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  background: #ECFDF5;
+  border: 1.5px solid #A7F3D0;
+  border-radius: var(--radius-md);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #065F46;
+}
+
+/* Section Paling Laris Hari Ini */
+.laris-card {
+  background: #FFFFFF;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 18px 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.laris-header {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--color-text-main);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.laris-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.laris-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--color-bg-app);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.laris-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.laris-emoji {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.laris-qty {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-light);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.laris-empty {
+  padding: 14px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-bg-app);
+  border-radius: var(--radius-md);
+  font-style: italic;
+}
+
+/* Backward compatibility classes */
 .hero-sales-card {
   background: linear-gradient(135deg, #FFFBF7 0%, #FFF3EC 100%);
   border: 2.5px solid var(--color-primary-border);
@@ -397,8 +762,8 @@ html, body {
 /* Main Action Grid */
 .menu-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
   margin-top: 14px;
 }
 
@@ -406,11 +771,11 @@ html, body {
   background: var(--color-card-bg);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
+  align-items: center;
+  text-align: center;
   cursor: pointer;
   transition: all 0.15s ease;
   box-shadow: var(--shadow-sm);
@@ -423,19 +788,19 @@ html, body {
 }
 
 .menu-card .menu-icon {
-  font-size: 2rem;
-  margin-bottom: 6px;
+  font-size: 1.8rem;
+  margin-bottom: 4px;
 }
 
 .menu-card .menu-title {
-  font-size: 1.15rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: var(--color-text-main);
   line-height: 1.2;
 }
 
 .menu-card .menu-desc {
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
   font-weight: 500;
   margin-top: 2px;
