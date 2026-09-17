@@ -182,3 +182,18 @@ document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
   checkOnboardingAndInit();
 });
+
+// Register Service Worker for PWA (Installable on Android & Offline Caching)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        console.log('[WARUNG OS] PWA Service Worker terpasang:', registration.scope);
+      })
+      .catch((error) => {
+        console.warn('[WARUNG OS] Service Worker gagal registrasi:', error);
+      });
+  });
+}
+
