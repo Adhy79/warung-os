@@ -1,0 +1,17 @@
+{
+  "name": "warung-os",
+  "version": "1.0.0",
+  "description": "Aplikasi Warung Super Sederhana untuk Pengguna Gaptek",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host --port 3000",
+    "build": "vite build",
+    "preview": "vite preview --port 3000"
+  },
+  "keywords": ["warung", "kasir", "pos", "indonesia"],
+  "author": "Warung OS",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#E05A2B" />
+  <meta name="description" content="WARUNG OS - Aplikasi Warung Super Sederhana untuk Pengguna Gaptek. Warung jadi lebih gampang." />
+  <title>WARUNG OS — Warung Jadi Lebih Gampang 😊</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+
+  <!-- Root App Shell -->
+  <div id="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header" id="main-header">
+      <div class="header-brand" id="header-brand-click">
+        <span class="shop-name" id="header-shop-name">WARUNG BU SITI</span>
+        <span class="shop-greeting" id="header-greeting">Selamat pagi 😊</span>
+      </div>
+      <div class="header-actions">
+        <!-- Font Size Toggle -->
+        <button class="header-btn btn-icon-only" id="btn-font-size" title="Ukuran Tulisan" aria-label="Ubah Ukuran Tulisan">
+          <span style="font-size: 1.15rem; font-weight: 900;">Aa</span>
+        </button>
+        <!-- NGOMONG AJA Quick Header Button (Ceritakan Jualan & Utang) -->
+        <button class="header-btn btn-icon-only" id="btn-quick-tanya" title="Ngomong Aja" aria-label="Ngomong Aja">
+          <span style="font-size: 1.25rem;">🎙️</span>
+        </button>
+        <!-- Settings Button -->
+        <button class="header-btn btn-icon-only" id="btn-settings" title="Pengaturan Warung" aria-label="Pengaturan">
+          <span style="font-size: 1.15rem;">⚙️</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main View Content (Routed by tab) -->
+    <main id="view-content">
+      <!-- Active tab content rendered here by JS -->
+      <section id="view-beranda" class="view-section active"></section>
+      <section id="view-jualan" class="view-section"></section>
+      <section id="view-barang" class="view-section"></section>
+      <section id="view-uang" class="view-section"></section>
+      <section id="view-ngutang" class="view-section"></section>
+      <section id="view-tanya" class="view-section"></section>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-item active" data-tab="beranda">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Beranda</span>
+      </button>
+      <button class="nav-item" data-tab="jualan">
+        <span class="nav-icon">🛒</span>
+        <span class="nav-label">Jualan</span>
+      </button>
+      <button class="nav-item" data-tab="barang">
+        <span class="nav-icon">📦</span>
+        <span class="nav-label">Barang</span>
+      </button>
+      <button class="nav-item" data-tab="uang">
+        <span class="nav-icon">💰</span>
+        <span class="nav-label">Uang</span>
+      </button>
+      <button class="nav-item" data-tab="ngutang">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">Ngutang</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- Dynamic Modal Container -->
+  <div id="modal-container"></div>
+
+  <!-- Global Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Onboarding Fullscreen Container -->
+  <div id="onboarding-container" class="hidden"></div>
+
+  <!-- Application Main Script -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
