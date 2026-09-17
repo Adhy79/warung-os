@@ -84,6 +84,22 @@ export function executeConfirmedDraft(draft, store) {
         };
       }
 
+      case INTENTS.PURCHASE: {
+        const purchase = store.recordPurchase({
+          productId: draft.productId,
+          productName: draft.productName,
+          quantity: draft.quantity,
+          totalCost: draft.totalCost,
+          unitCost: draft.unitCost
+        });
+        return {
+          success: true,
+          type: INTENTS.PURCHASE,
+          purchase,
+          message: `Alhamdulillah, belanja ${draft.productName} ${draft.quantity} ${draft.productUnit || 'pcs'} (Total Rp${(draft.totalCost || 0).toLocaleString('id-ID')}) sudah dicatat! Stok bertambah & harga modal baru tersimpan 😊`
+        };
+      }
+
       default:
         return { success: false, error: 'Jenis transaksi tidak dikenali.' };
     }

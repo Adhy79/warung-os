@@ -6,11 +6,13 @@ export const INTENTS = {
   SALE_DEBT: 'SALE_DEBT',
   DEBT_PAYMENT: 'DEBT_PAYMENT',
   EXPENSE: 'EXPENSE',
+  PURCHASE: 'PURCHASE',
   STOCK_ADD: 'STOCK_ADD',
   STOCK_REMOVE: 'STOCK_REMOVE',
   QUERY_SALES: 'QUERY_SALES',
   QUERY_CASH: 'QUERY_CASH',
   QUERY_EXPENSE: 'QUERY_EXPENSE',
+  QUERY_PURCHASE: 'QUERY_PURCHASE',
   QUERY_MARGIN: 'QUERY_MARGIN',
   QUERY_STOCK: 'QUERY_STOCK',
   QUERY_DEBT: 'QUERY_DEBT',
@@ -129,6 +131,15 @@ export function detectIntent(text, { hasPerson = false, hasItems = false, hasAmo
     return { intent: INTENTS.QUERY_CASH, confidence: 0.98 };
   }
 
+  // Query Belanja Barang (V2.2 Read-only query)
+  if (
+    (lower.includes('belanja barang') || lower.includes('belanja stok') || lower.includes('total belanja') || lower.includes('kulakan')) &&
+    (lower.includes('berapa') || lower.includes('total') || lower.includes('hari ini') || lower.includes('minggu ini') || lower.includes('bulan ini')) &&
+    !hasAmount
+  ) {
+    return { intent: INTENTS.QUERY_PURCHASE, confidence: 0.98 };
+  }
+
   // Query Expenses (Read-only query)
   if (
     (lower.includes('pengeluaran') || lower.includes('uang keluar') || lower.includes('belanja modal')) &&
@@ -177,6 +188,31 @@ export function detectIntent(text, { hasPerson = false, hasItems = false, hasAmo
     (hasPerson && (lower.includes('bayar') || lower.includes('cicil')) && (hasAmount || lower.includes('utang') || lower.includes('semua') || lower.includes('lunas')))
   ) {
     return { intent: INTENTS.DEBT_PAYMENT, confidence: 0.95 };
+  }
+
+  // Purchase (Belanja Barang V2.2): "Tadi beli Indomie 20, total 50 ribu", "Beli Indomie 50 ribu", "Kulakan Indomie 20 total 50 ribu"
+  const isCustomerSale =
+    lower.includes('ada yang beli') ||
+    lower.includes('orang beli') ||
+    lower.includes('ada pembeli') ||
+    lower.includes('pembeli') ||
+    lower.includes('laku') ||
+    lower.includes('jual') ||
+    lower.includes('kejual') ||
+    hasPerson ||
+    lower.includes('ngutang') ||
+    lower.includes('utang');
+
+  if (
+    !isCustomerSale &&
+    hasItems &&
+    (
+      lower.includes('beli') ||
+      lower.includes('kulakan') ||
+      lower.includes('belanja')
+    )
+  ) {
+    return { intent: INTENTS.PURCHASE, confidence: 0.95 };
   }
 
   // Expense: "Tadi beli gas dua puluh ribu", "Pengeluaran belanja stok 50.000", "Beli sabun 15 ribu"

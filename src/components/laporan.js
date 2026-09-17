@@ -9,6 +9,14 @@ export function renderLaporan(container, navigateToTab) {
     const salesTotal = store.getSalesTotalByPeriod(currentPeriod);
     const cashReceived = store.getCashReceivedByPeriod(currentPeriod);
     const expensesTotal = store.getExpensesTotalByPeriod(currentPeriod);
+    const purchasesTotal = store.getPurchasesTotalByPeriod ? store.getPurchasesTotalByPeriod(currentPeriod) : 0;
+    const purchasesCount = store.getPurchasesCountByPeriod ? store.getPurchasesCountByPeriod(currentPeriod) : 0;
+    const purchases = store.getPurchasesByPeriod ? store.getPurchasesByPeriod(currentPeriod) : [];
+
+    const purchasesTodayTotal = store.getPurchasesTotalByPeriod ? store.getPurchasesTotalByPeriod('today') : 0;
+    const purchasesWeekTotal = store.getPurchasesTotalByPeriod ? store.getPurchasesTotalByPeriod('week') : 0;
+    const purchasesMonthTotal = store.getPurchasesTotalByPeriod ? store.getPurchasesTotalByPeriod('month') : 0;
+
     const uangDiLaci = store.getTodayUangKasAkhir
       ? store.getTodayUangKasAkhir()
       : store.getTodayUangTersisa();
@@ -51,7 +59,7 @@ export function renderLaporan(container, navigateToTab) {
         </div>
       </div>
 
-      <!-- 3. RINGKASAN FINANSIAL (4 Kartu Mudah Dibaca) -->
+      <!-- 3. RINGKASAN FINANSIAL (Pemisahan Jelas V2.2) -->
       <div class="laporan-summary-grid">
         <!-- JUALAN -->
         <div class="laporan-metric-card card-jualan">
@@ -73,14 +81,24 @@ export function renderLaporan(container, navigateToTab) {
           <div class="metric-desc">Uang tunai fisik diterima di kas</div>
         </div>
 
-        <!-- UANG KELUAR -->
+        <!-- BELANJA BARANG -->
+        <div class="laporan-metric-card card-belanja">
+          <div class="metric-top">
+            <span class="metric-icon">📦</span>
+            <span class="metric-label">Belanja Barang</span>
+          </div>
+          <div class="metric-amount val-blue">${formatRupiah(purchasesTotal)}</div>
+          <div class="metric-desc">Kulakan stok warung (${purchasesCount} pembelian)</div>
+        </div>
+
+        <!-- PENGELUARAN LAIN -->
         <div class="laporan-metric-card card-keluar">
           <div class="metric-top">
             <span class="metric-icon">💸</span>
-            <span class="metric-label">Uang Keluar</span>
+            <span class="metric-label">Pengeluaran Lain</span>
           </div>
           <div class="metric-amount val-orange">${formatRupiah(expensesTotal)}</div>
-          <div class="metric-desc">Belanja stok & operasional warung</div>
+          <div class="metric-desc">Listrik, bensin, dan operasional</div>
         </div>
 
         <!-- UANG DI LACI -->
@@ -90,7 +108,7 @@ export function renderLaporan(container, navigateToTab) {
             <span class="metric-label">Uang di Laci</span>
           </div>
           <div class="metric-amount val-primary">${formatRupiah(uangDiLaci)}</div>
-          <div class="metric-desc">Uang kas yang ada saat ini</div>
+          <div class="metric-desc">Kas awal + uang masuk - belanja barang - pengeluaran lain</div>
         </div>
       </div>
 
@@ -194,11 +212,73 @@ export function renderLaporan(container, navigateToTab) {
         </div>
       </div>
 
-      <!-- 6. PENGELUARAN PADA PERIODE -->
+      <!-- BELANJA BARANG (V2.2) -->
+      <div class="laporan-section-card" style="border-left: 5px solid #2563EB;">
+        <div class="laporan-section-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="section-icon">📦</span>
+            <span class="section-title">Belanja Barang (${periodLabel})</span>
+          </div>
+          <span class="section-badge-right" style="color: #1D4ED8; font-weight: 900; font-size: 1.15rem;">${formatRupiah(purchasesTotal)}</span>
+        </div>
+
+        <!-- Ringkasan Belanja: Hari Ini, Minggu Ini, Bulan Ini & Transaksi -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 10px 0 14px 0;">
+          <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 8px; padding: 8px 10px;">
+            <div style="font-size: 0.75rem; color: #166534; font-weight: 700;">HARI INI</div>
+            <div style="font-size: 0.95rem; font-weight: 900; color: #15803D;">${formatRupiah(purchasesTodayTotal)}</div>
+          </div>
+          <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 8px; padding: 8px 10px;">
+            <div style="font-size: 0.75rem; color: #1E40AF; font-weight: 700;">MINGGU INI (7 HARI)</div>
+            <div style="font-size: 0.95rem; font-weight: 900; color: #1D4ED8;">${formatRupiah(purchasesWeekTotal)}</div>
+          </div>
+          <div style="background: #FAF5FF; border: 1.5px solid #E9D5FF; border-radius: 8px; padding: 8px 10px;">
+            <div style="font-size: 0.75rem; color: #6B21A8; font-weight: 700;">BULAN INI</div>
+            <div style="font-size: 0.95rem; font-weight: 900; color: #7E22CE;">${formatRupiah(purchasesMonthTotal)}</div>
+          </div>
+          <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 8px; padding: 8px 10px;">
+            <div style="font-size: 0.75rem; color: #92400E; font-weight: 700;">TRANSAKSI BELANJA</div>
+            <div style="font-size: 0.95rem; font-weight: 900; color: #B45309;">${purchasesCount} kali</div>
+          </div>
+        </div>
+
+        <div class="laporan-list">
+          ${
+            purchases.length > 0
+              ? purchases
+                  .map((p) => {
+                    const dateFormatted = new Date(p.createdAt).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'short'
+                    });
+                    return `
+                <div class="laporan-list-item">
+                  <div class="item-left">
+                    <span class="item-emoji">📦</span>
+                    <div>
+                      <div class="item-name">${p.productName}</div>
+                      <div class="item-subtext">${dateFormatted} • ${p.quantity} pcs @ ${formatRupiah(p.unitCost)}</div>
+                    </div>
+                  </div>
+                  <div style="font-weight: 800; color: #1D4ED8; font-size: 1.05rem;">-${formatRupiah(p.totalCost)}</div>
+                </div>
+              `;
+                  })
+                  .join('')
+              : `
+                <div class="laporan-list-empty">
+                  Belum ada belanja barang pada periode ini.
+                </div>
+              `
+          }
+        </div>
+      </div>
+
+      <!-- 6. PENGELUARAN LAIN PADA PERIODE -->
       <div class="laporan-section-card">
         <div class="laporan-section-header">
           <span class="section-icon">📝</span>
-          <span class="section-title">Daftar Pengeluaran (${periodLabel})</span>
+          <span class="section-title">Daftar Pengeluaran Lain (${periodLabel})</span>
           <span class="section-badge-right val-orange">${formatRupiah(expensesTotal)}</span>
         </div>
         <div class="laporan-list">

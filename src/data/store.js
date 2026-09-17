@@ -262,6 +262,7 @@ export function getInitialDemoData() {
         ]
       }
     ],
+    purchases: [],
     settings: {
       fontSize: 'normal', // 'normal' | 'large' | 'xlarge'
       speechEnabled: true
@@ -274,6 +275,9 @@ class Store {
     this.listeners = [];
     this.memoryStorage = null;
     this.data = this.load();
+    if (!this.data.purchases) {
+      this.data.purchases = [];
+    }
   }
 
   load() {
@@ -281,10 +285,14 @@ class Store {
       if (typeof localStorage !== 'undefined') {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-          return JSON.parse(stored);
+          const parsed = JSON.parse(stored);
+          if (!parsed.purchases) parsed.purchases = [];
+          return parsed;
         }
       } else if (this.memoryStorage) {
-        return JSON.parse(this.memoryStorage);
+        const parsed = JSON.parse(this.memoryStorage);
+        if (!parsed.purchases) parsed.purchases = [];
+        return parsed;
       }
     } catch (e) {
       console.warn('Storage read fallback', e);
@@ -405,10 +413,10 @@ class Store {
     return this.getTodayExpenses().reduce((sum, e) => sum + (e.amount || 0), 0);
   }
 
-  // Uang Tersisa: Real cash left in drawer today after expenses
-  // = (Total cash collected today) - (Expenses today)
+  // Uang Tersisa: Real cash left in drawer today after expenses and purchases
+  // = (Total cash collected today) - (Expenses today) - (Purchases today)
   getTodayUangTersisa() {
-    return this.getTodayCashReceived() - this.getTodayExpensesTotal();
+    return this.getTodayCashReceived() - this.getTodayExpensesTotal() - this.getTodayPurchasesTotal();
   }
 
   // Kas Awal Warung
@@ -422,9 +430,9 @@ class Store {
     this.save();
   }
 
-  // Uang Kas Akhir = Kas Awal + Uang Masuk Hari Ini - Pengeluaran Hari Ini
+  // Uang Kas Akhir = Kas Awal + Uang Masuk Hari Ini - Belanja Barang Hari Ini - Pengeluaran Lain Hari Ini
   getTodayUangKasAkhir() {
-    return this.getKasAwal() + this.getTodayCashReceived() - this.getTodayExpensesTotal();
+    return this.getKasAwal() + this.getTodayCashReceived() - this.getTodayPurchasesTotal() - this.getTodayExpensesTotal();
   }
 
   // Backward compatibility alias for any existing reference
@@ -514,6 +522,40 @@ class Store {
 
   getExpensesTotalByPeriod(period = 'today') {
     return this.getExpensesByPeriod(period).reduce((sum, e) => sum + (e.amount || 0), 0);
+  }
+
+  // ==========================================================================
+  // V2.2 — PEMBELIAN / BELANJA BARANG GETTERS BY PERIOD
+  // ==========================================================================
+
+  getPurchases() {
+    return this.data.purchases || [];
+  }
+
+  getTodayPurchases() {
+    return this.getPurchasesByPeriod('today');
+  }
+
+  getTodayPurchasesTotal() {
+    return this.getPurchasesTotalByPeriod('today');
+  }
+
+  getTodayPurchasesCount() {
+    return this.getPurchasesCountByPeriod('today');
+  }
+
+  getPurchasesByPeriod(period = 'today') {
+    return (this.data.purchases || []).filter((p) => {
+      return this.isDateInPeriod(p.createdAt, period);
+    });
+  }
+
+  getPurchasesTotalByPeriod(period = 'today') {
+    return this.getPurchasesByPeriod(period).reduce((sum, p) => sum + (p.totalCost || 0), 0);
+  }
+
+  getPurchasesCountByPeriod(period = 'today') {
+    return this.getPurchasesByPeriod(period).length;
   }
 
   // Ranking best selling products in period
@@ -747,6 +789,52 @@ class Store {
     return newExpense;
   }
 
+  // ==========================================================================
+  // V2.2 — RECORD PURCHASE (BELANJA BARANG)
+  // BELI -> STOK BERTAMBAH -> UANG DI LACI BERKURANG -> HARGA MODAL TERBARU TERSIMPAN
+  // ==========================================================================
+  recordPurchase({ productId, productName, quantity, totalCost, unitCost, date }) {
+    const qty = Math.max(0, parseInt(quantity, 10) || 0);
+    const total = Math.max(0, Number(totalCost) || 0);
+    const unit = unitCost !== undefined && unitCost !== null
+      ? Math.max(0, Number(unitCost) || 0)
+      : (qty > 0 ? Math.round(total / qty) : 0);
+
+    // 1. Update product stock and latest costPrice
+    let prod = null;
+    if (productId) {
+      prod = this.data.products.find((p) => p.id === productId);
+    }
+    if (!prod && productName) {
+      prod = this.data.products.find(
+        (p) => p.name.trim().toLowerCase() === productName.trim().toLowerCase()
+      );
+    }
+
+    if (prod) {
+      prod.stock = (prod.stock || 0) + qty;
+      prod.costPrice = unit; // Update latest cost price
+    }
+
+    // 2. Record purchase transaction
+    const purchaseRecord = {
+      id: generateId('purch'),
+      productId: prod ? prod.id : (productId || null),
+      productName: prod ? prod.name : (productName || 'Barang'),
+      quantity: qty,
+      totalCost: total,
+      unitCost: unit,
+      createdAt: date || new Date().toISOString()
+    };
+
+    if (!this.data.purchases) {
+      this.data.purchases = [];
+    }
+    this.data.purchases.unshift(purchaseRecord);
+    this.save();
+    return purchaseRecord;
+  }
+
   // Debt Management
   addDebtor(personName, initialDebt = 0, note = '') {
     const nowIso = new Date().toISOString();
@@ -856,6 +944,7 @@ class Store {
       warung: { id: 'w-1', name: 'Warung Saya', category: 'Sembako' },
       products: [],
       sales: [],
+      purchases: [],
       expenses: [],
       debts: [],
       settings: { fontSize: 'normal', speechEnabled: true }

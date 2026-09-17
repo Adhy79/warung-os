@@ -23,11 +23,13 @@ export function renderNgomong(container) {
 
   // Quick Chips for effortless testing & everyday prompts
   const quickSuggestions = [
+    'Tadi beli Indomie 20, total 50 ribu',
     'Tadi Bu Siti ngutang tiga Indomie sama satu es teh',
     'Budi bayar utang sepuluh ribu',
     'Tadi laku dua Indomie',
     'Tadi beli gas dua puluh ribu',
     'Jualan hari ini berapa?',
+    'Belanja barang hari ini berapa?',
     'Besok belanja apa?'
   ];
 
@@ -191,6 +193,8 @@ export function renderNgomong(container) {
         speakText(`Mau dicatat sebagai utang ${result.draft.debtorName}, Bu?`);
       } else if (result.intent === INTENTS.DEBT_PAYMENT) {
         speakText(`Catat pembayaran utang ${result.draft.personName}, Bu?`);
+      } else if (result.intent === INTENTS.PURCHASE) {
+        speakText(`Beli ${result.draft.productName} ${result.draft.quantity} total ${formatRupiah(result.draft.totalCost)}. Mau dicatat?`);
       } else {
         speakText(`Total ${formatRupiah(result.draft.total || result.draft.amount)}. Mau dicatat?`);
       }
@@ -481,6 +485,29 @@ export function renderNgomong(container) {
             </div>
           </div>
           <div class="draft-subtext-hint">Uang kas akan bertambah ${formatRupiah(draft.amount)}, total jualan tidak berubah.</div>
+        </div>
+      `;
+    }
+
+    if (draft.type === INTENTS.PURCHASE) {
+      return `
+        <div class="draft-detail-card" style="border-left: 5px solid #2563EB;">
+          <div class="draft-person-header">📦 BELI BARANG (KULAKAN)</div>
+          <div class="draft-items-list">
+            <div class="draft-item-row">
+              <span style="font-weight: 800; font-size: 1.05rem;">• ${escapeHtml(draft.productName)}</span>
+              <span style="font-weight: 800; font-size: 1.05rem;">${draft.quantity} ${escapeHtml(draft.productUnit || 'pcs')}</span>
+            </div>
+            <div class="draft-item-row" style="color: var(--color-text-muted); font-size: 0.88rem;">
+              <span>Harga Modal / unit:</span>
+              <span style="font-weight: 700; color: #1E40AF;">${formatRupiah(draft.unitCost)} / ${escapeHtml(draft.productUnit || 'pcs')}</span>
+            </div>
+          </div>
+          <div class="draft-total-row">
+            <span>Total Belanja:</span>
+            <span class="draft-amount-highlight" style="color: #2563EB;">${formatRupiah(draft.totalCost)}</span>
+          </div>
+          <div class="draft-subtext-hint">Stok bertambah +${draft.quantity}, uang laci berkurang ${formatRupiah(draft.totalCost)}, harga modal disimpan.</div>
         </div>
       `;
     }

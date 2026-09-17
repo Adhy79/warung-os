@@ -2302,8 +2302,18 @@ html, body {
   color: #C24417;
 }
 
+.laporan-metric-card .metric-amount.val-blue {
+  color: #1D4ED8;
+}
+
 .laporan-metric-card .metric-amount.val-primary {
   color: var(--color-primary-dark);
+}
+
+.laporan-metric-card.card-laci {
+  grid-column: 1 / -1;
+  background: #FFFBEB;
+  border: 2px solid #FDE68A;
 }
 
 .laporan-metric-card .metric-desc {

@@ -7,7 +7,7 @@ export function renderBarang(container) {
     const products = store.getProducts();
 
     container.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
         <div>
           <h2 style="font-size: 1.4rem; font-weight: 900; color: var(--color-text-main);">
             Daftar Barang 📦
@@ -16,9 +16,14 @@ export function renderBarang(container) {
             Total ada ${products.length} macam barang
           </p>
         </div>
-        <button class="btn-small btn-primary" id="btn-open-add-product" style="font-size: 0.95rem; font-weight: 800; padding: 10px 14px;">
-          <span>+ TAMBAH BARANG</span>
-        </button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-small btn-secondary" id="btn-open-purchase" style="font-size: 0.92rem; font-weight: 800; padding: 10px 12px; background: #EFF6FF; border: 1.5px solid #93C5FD; color: #1D4ED8;">
+            <span>📦 BELANJA BARANG</span>
+          </button>
+          <button class="btn-small btn-primary" id="btn-open-add-product" style="font-size: 0.92rem; font-weight: 800; padding: 10px 12px;">
+            <span>+ TAMBAH BARANG</span>
+          </button>
+        </div>
       </div>
 
       ${
@@ -69,9 +74,14 @@ export function renderBarang(container) {
                     </span>
                   `
                   }
-                  <button class="btn-small btn-secondary btn-edit-stock" data-id="${p.id}" style="min-height: 42px; padding: 6px 14px; font-size: 0.95rem; font-weight: 800; margin-top: 6px;">
-                    ➕ / ➖ Tambah / Kurang
-                  </button>
+                  <div style="display: flex; gap: 6px; margin-top: 6px;">
+                    <button class="btn-small btn-secondary btn-quick-purch" data-id="${p.id}" style="min-height: 42px; padding: 6px 10px; font-size: 0.9rem; font-weight: 800; background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8;">
+                      📦 Belanja
+                    </button>
+                    <button class="btn-small btn-secondary btn-edit-stock" data-id="${p.id}" style="min-height: 42px; padding: 6px 12px; font-size: 0.9rem; font-weight: 800;">
+                      ➕ / ➖ Stok
+                    </button>
+                  </div>
                 </div>
               </div>
             `;
@@ -86,6 +96,10 @@ export function renderBarang(container) {
   }
 
   function bindEvents() {
+    document.getElementById('btn-open-purchase')?.addEventListener('click', () => {
+      openPurchaseModal();
+    });
+
     document.getElementById('btn-open-add-product')?.addEventListener('click', () => {
       openAddProductWizard();
     });
@@ -102,6 +116,14 @@ export function renderBarang(container) {
       });
     });
 
+    container.querySelectorAll('.btn-quick-purch').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        openPurchaseModal(id);
+      });
+    });
+
     container.querySelectorAll('.btn-edit-stock').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -109,6 +131,198 @@ export function renderBarang(container) {
         openEditStockModal(id);
       });
     });
+  }
+
+  // ==========================================================================
+  // V2.2 — MODAL BELANJA BARANG (KULAKAN)
+  // ==========================================================================
+  function openPurchaseModal(defaultProductId = null) {
+    const modalContainer = document.getElementById('modal-container');
+    const products = store.getProducts();
+    if (products.length === 0) {
+      showToast('Tambahkan barang terlebih dahulu ya Bu/Pak 😊', 'info');
+      return;
+    }
+
+    let selectedProductId = defaultProductId || products[0].id;
+    let quantity = 10;
+    let totalCost = '';
+
+    function getSelectedProduct() {
+      return products.find((p) => p.id === selectedProductId) || products[0];
+    }
+
+    function renderPurchaseModal() {
+      const prod = getSelectedProduct();
+      const unitCost = quantity > 0 && totalCost > 0 ? Math.round(totalCost / quantity) : 0;
+
+      modalContainer.innerHTML = `
+        <div class="modal-overlay">
+          <div class="modal-sheet">
+            <div class="modal-header">
+              <div class="modal-title">Belanja Barang (Kulakan) 📦</div>
+              <button class="modal-close-btn" id="btn-close-purch">✕</button>
+            </div>
+
+            <p style="font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 14px;">
+              Catat barang yang baru dibeli untuk menambah stok dan memperbarui harga modal warung.
+            </p>
+
+            <!-- 1. Pilih Barang -->
+            <div class="input-money-container" style="margin-bottom: 14px;">
+              <label class="input-money-label" for="select-purch-prod">Nama Barang:</label>
+              <select id="select-purch-prod" class="input-money-box" style="font-size: 1.1rem; font-weight: 800; padding: 10px;">
+                ${products
+                  .map(
+                    (p) => `
+                  <option value="${p.id}" ${p.id === selectedProductId ? 'selected' : ''}>
+                    ${p.emoji} ${p.name} (Stok: ${p.stock} ${p.unit || 'buah'})
+                  </option>
+                `
+                  )
+                  .join('')}
+              </select>
+            </div>
+
+            <!-- 2. Jumlah Barang Dibeli -->
+            <div class="input-money-container" style="margin-bottom: 14px;">
+              <label class="input-money-label" for="input-purch-qty">Jumlah yang Dibeli (${prod.unit || 'pcs'}):</label>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" class="btn-huge btn-secondary" id="btn-purch-dec" style="flex: 1; min-height: 48px; font-size: 1.1rem; font-weight: 900;">
+                  ➖
+                </button>
+                <input 
+                  type="number" 
+                  id="input-purch-qty" 
+                  class="input-money-box" 
+                  value="${quantity}" 
+                  style="text-align: center; max-width: 110px; font-size: 1.5rem; font-weight: 900;" 
+                />
+                <button type="button" class="btn-huge btn-secondary" id="btn-purch-inc" style="flex: 1; min-height: 48px; font-size: 1.1rem; font-weight: 900;">
+                  ➕
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Total Biaya Belanja -->
+            <div class="input-money-container" style="margin-bottom: 16px;">
+              <label class="input-money-label" for="input-purch-cost">Total Belanja (Total Uang Keluar):</label>
+              <input 
+                type="text" 
+                inputmode="numeric" 
+                id="input-purch-cost" 
+                class="input-money-box" 
+                value="${totalCost ? formatRupiah(totalCost) : ''}" 
+                placeholder="Contoh: 50.000" 
+                style="font-size: 1.35rem; font-weight: 900; color: #1D4ED8;"
+              />
+            </div>
+
+            <!-- 4. Ringkasan & Harga Modal Otomatis -->
+            <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: var(--radius-md); padding: 12px; margin-bottom: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 0.9rem; color: #1E40AF; font-weight: 700;">Harga Modal per unit:</span>
+                <span style="font-size: 1.25rem; font-weight: 900; color: #1D4ED8;" id="label-unit-cost">
+                  ${unitCost > 0 ? formatRupiah(unitCost) : 'Rp0'}
+                </span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.4;">
+                Efek: Stok ${prod.name} bertambah +${quantity}, uang di laci berkurang ${totalCost > 0 ? formatRupiah(totalCost) : 'Rp0'}, dan harga modal terbaru disimpan.
+              </div>
+            </div>
+
+            <!-- 5. Tombol Aksi -->
+            <div style="display: flex; gap: 10px;">
+              <button class="btn-huge btn-secondary" id="btn-close-purch-action" style="flex: 1; min-height: 54px; font-size: 1rem;">
+                <span>Batal</span>
+              </button>
+              <button class="btn-huge btn-primary" id="btn-submit-purch" style="flex: 2; min-height: 54px; font-size: 1.05rem; font-weight: 900; background: #2563EB;">
+                <span>CATAT BELANJA</span>
+                <span>✅</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('btn-close-purch')?.addEventListener('click', () => (modalContainer.innerHTML = ''));
+      document.getElementById('btn-close-purch-action')?.addEventListener('click', () => (modalContainer.innerHTML = ''));
+
+      const selectProd = document.getElementById('select-purch-prod');
+      selectProd?.addEventListener('change', (e) => {
+        selectedProductId = e.target.value;
+        renderPurchaseModal();
+      });
+
+      const qtyInput = document.getElementById('input-purch-qty');
+      qtyInput?.addEventListener('input', (e) => {
+        quantity = Math.max(1, parseInt(e.target.value, 10) || 1);
+        const costVal = parseRupiahInput(document.getElementById('input-purch-cost')?.value) || 0;
+        const u = quantity > 0 && costVal > 0 ? Math.round(costVal / quantity) : 0;
+        const lbl = document.getElementById('label-unit-cost');
+        if (lbl) lbl.textContent = formatRupiah(u);
+      });
+
+      document.getElementById('btn-purch-dec')?.addEventListener('click', () => {
+        if (quantity > 1) {
+          quantity--;
+          const input = document.getElementById('input-purch-qty');
+          if (input) input.value = quantity;
+          const costVal = parseRupiahInput(document.getElementById('input-purch-cost')?.value) || 0;
+          const u = quantity > 0 && costVal > 0 ? Math.round(costVal / quantity) : 0;
+          const lbl = document.getElementById('label-unit-cost');
+          if (lbl) lbl.textContent = formatRupiah(u);
+        }
+      });
+
+      document.getElementById('btn-purch-inc')?.addEventListener('click', () => {
+        quantity++;
+        const input = document.getElementById('input-purch-qty');
+        if (input) input.value = quantity;
+        const costVal = parseRupiahInput(document.getElementById('input-purch-cost')?.value) || 0;
+        const u = quantity > 0 && costVal > 0 ? Math.round(costVal / quantity) : 0;
+        const lbl = document.getElementById('label-unit-cost');
+        if (lbl) lbl.textContent = formatRupiah(u);
+      });
+
+      const costInput = document.getElementById('input-purch-cost');
+      costInput?.addEventListener('input', (e) => {
+        totalCost = parseRupiahInput(e.target.value);
+        e.target.value = totalCost ? formatRupiah(totalCost) : '';
+        const unit = quantity > 0 && totalCost > 0 ? Math.round(totalCost / quantity) : 0;
+        const lbl = document.getElementById('label-unit-cost');
+        if (lbl) lbl.textContent = formatRupiah(unit);
+      });
+
+      document.getElementById('btn-submit-purch')?.addEventListener('click', () => {
+        const prod = getSelectedProduct();
+        const finalCost = parseRupiahInput(costInput?.value) || totalCost;
+        if (!finalCost || finalCost <= 0) {
+          showToast('Total belanja diisi dulu ya Bu/Pak 😊', 'error');
+          return;
+        }
+        if (!quantity || quantity <= 0) {
+          showToast('Jumlah barang harus lebih dari 0 ya 😊', 'error');
+          return;
+        }
+
+        const unitCost = Math.round(finalCost / quantity);
+
+        store.recordPurchase({
+          productId: prod.id,
+          productName: prod.name,
+          quantity,
+          totalCost: finalCost,
+          unitCost
+        });
+
+        modalContainer.innerHTML = '';
+        renderView();
+        showToast(`Belanja ${prod.name} ${quantity} ${prod.unit || 'buah'} berhasil dicatat! 😊`, 'success');
+      });
+    }
+
+    renderPurchaseModal();
   }
 
   function autoDetectEmoji(text) {

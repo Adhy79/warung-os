@@ -10,6 +10,7 @@ export class NgomongParser {
     this.store = storeInstance;
     this.sessionContext = {
       pendingDraft: null,
+      pendingPurchase: null,
       lastAction: null,
       contextPerson: null,
       contextProduct: null
@@ -23,6 +24,7 @@ export class NgomongParser {
   clearContext() {
     this.sessionContext = {
       pendingDraft: null,
+      pendingPurchase: null,
       lastAction: null,
       contextPerson: null,
       contextProduct: null
@@ -83,6 +85,39 @@ export class NgomongParser {
           intent: 'CANCEL',
           confidence: 0.98,
           message: 'Tidak apa-apa Bu, santai saja 😊 Belum ada data yang dicatat kok.'
+        };
+      }
+    }
+
+    // Check if waiting for purchase quantity clarification
+    if (this.sessionContext.pendingPurchase) {
+      const explicitQty = this.extractPurchaseQuantity(text, '');
+      if (explicitQty && explicitQty > 0) {
+        const { product, totalCost } = this.sessionContext.pendingPurchase;
+        this.sessionContext.pendingPurchase = null;
+        const quantity = explicitQty;
+        const unitCost = Math.round(totalCost / quantity);
+
+        const draft = {
+          type: INTENTS.PURCHASE,
+          productId: product.id,
+          productName: product.name,
+          productEmoji: product.emoji || '📦',
+          productUnit: product.unit || 'pcs',
+          quantity,
+          totalCost,
+          unitCost,
+          confidence: 0.95
+        };
+
+        this.sessionContext.pendingDraft = draft;
+
+        return {
+          status: 'DRAFT_READY',
+          intent: INTENTS.PURCHASE,
+          confidence: 0.95,
+          draft,
+          summary: `BELI BARANG\n${product.name}\n${quantity} pcs\nTotal Rp${totalCost.toLocaleString('id-ID')}\nModal/unit Rp${unitCost.toLocaleString('id-ID')}\n\nCatat pembelian barang ini?`
         };
       }
     }
@@ -185,6 +220,7 @@ export class NgomongParser {
       intent === INTENTS.QUERY_SALES ||
       intent === INTENTS.QUERY_CASH ||
       intent === INTENTS.QUERY_EXPENSE ||
+      intent === INTENTS.QUERY_PURCHASE ||
       intent === INTENTS.QUERY_MARGIN ||
       intent === INTENTS.QUERY_DEBT ||
       intent === INTENTS.QUERY_STOCK ||
@@ -276,7 +312,75 @@ export class NgomongParser {
       };
     }
 
-    // B. EXPENSE
+    // B.1 PURCHASE (BELANJA BARANG V2.2)
+    if (intent === INTENTS.PURCHASE) {
+      const pMatch = matchedProducts.find((p) => p.product);
+      const product = pMatch?.product || (products.length > 0 ? products[0] : null);
+      const totalCost = amountResult ? amountResult.amount : 0;
+
+      if (!product) {
+        return {
+          status: 'LOW_CONFIDENCE',
+          intent: INTENTS.PURCHASE,
+          confidence: 0.65,
+          message: 'Tadi beli barang apa ya, Bu? 😊'
+        };
+      }
+
+      if (!totalCost || totalCost === 0) {
+        return {
+          status: 'LOW_CONFIDENCE',
+          intent: INTENTS.PURCHASE,
+          confidence: 0.65,
+          message: `Berapa total belanja untuk ${product.name}, Bu? 😊`
+        };
+      }
+
+      // Extract explicit quantity without guessing (Rule 4)
+      const explicitQty = this.extractPurchaseQuantity(text, amountResult ? amountResult.raw : '');
+      if (!explicitQty) {
+        this.sessionContext.pendingPurchase = {
+          product,
+          totalCost
+        };
+        return {
+          status: 'CLARIFY_PURCHASE_QUANTITY',
+          intent: INTENTS.PURCHASE,
+          confidence: 0.85,
+          product,
+          totalCost,
+          message: `Tadi beli ${product.name} berapa ${product.unit || 'bungkus'}, Bu? 😊`
+        };
+      }
+
+      const quantity = explicitQty;
+      const unitCost = Math.round(totalCost / quantity);
+
+      const draft = {
+        type: INTENTS.PURCHASE,
+        productId: product.id,
+        productName: product.name,
+        productEmoji: product.emoji || '📦',
+        productUnit: product.unit || 'pcs',
+        quantity,
+        totalCost,
+        unitCost,
+        confidence: 0.95
+      };
+
+      this.sessionContext.pendingDraft = draft;
+      this.sessionContext.pendingPurchase = null;
+
+      return {
+        status: 'DRAFT_READY',
+        intent: INTENTS.PURCHASE,
+        confidence: 0.95,
+        draft,
+        summary: `BELI BARANG\n${product.name}\n${quantity} pcs\nTotal Rp${totalCost.toLocaleString('id-ID')}\nModal/unit Rp${unitCost.toLocaleString('id-ID')}\n\nCatat pembelian barang ini?`
+      };
+    }
+
+    // B.2 EXPENSE
     if (intent === INTENTS.EXPENSE) {
       const amount = amountResult ? amountResult.amount : 0;
       let note = 'Belanja Stok';
@@ -530,6 +634,24 @@ export class NgomongParser {
         };
       }
 
+      case INTENTS.QUERY_PURCHASE: {
+        let label = 'hari ini';
+        if (period === 'week') label = 'minggu ini (7 hari)';
+        if (period === 'month') label = 'bulan ini';
+        const purchTotal = this.store.getPurchasesTotalByPeriod
+          ? this.store.getPurchasesTotalByPeriod(period)
+          : this.store.getTodayPurchasesTotal();
+        const purchCount = this.store.getPurchasesCountByPeriod
+          ? this.store.getPurchasesCountByPeriod(period)
+          : this.store.getTodayPurchasesCount();
+        return {
+          status: 'QUERY_ANSWER',
+          intent,
+          confidence: 0.98,
+          answer: `Belanja barang warung ${label} ada ${formatRp(purchTotal)} 😊 (${purchCount} transaksi belanja)`
+        };
+      }
+
       case INTENTS.QUERY_MARGIN: {
         let label = 'hari ini';
         if (period === 'week') label = 'minggu ini (7 hari)';
@@ -665,5 +787,54 @@ export class NgomongParser {
           message: 'Ada yang bisa saya bantu cek di warung, Bu? 😊'
         };
     }
+  }
+
+  /**
+   * Extract explicit purchase quantity without guessing (V2.2 Safety Guard)
+   * Returns integer if explicitly mentioned, or null if quantity is missing/unspecified.
+   */
+  extractPurchaseQuantity(text, amountRaw = '') {
+    if (!text) return null;
+    let cleaned = text.toLowerCase();
+    if (amountRaw) {
+      cleaned = cleaned.replace(amountRaw.toLowerCase(), ' ');
+    }
+    cleaned = cleaned
+      .replace(/\b(?:total|seharga|senilai|sebesar|rp|rupiah|ribu|rb|k|juta)\b/gi, ' ')
+      .replace(/[.,;!?]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // 1. Digit match e.g. "20", "20 bungkus", "20 pcs", "20x", "20 butir"
+    const digitMatch = cleaned.match(/\b(\d+)\s*(?:pcs|bungkus|gelas|butir|buah|biji|cangkir|dus|karton|pak|box|kaleng|piring|botol|kg|liter|x)?\b/i);
+    if (digitMatch) {
+      const val = parseInt(digitMatch[1], 10);
+      if (val > 0) return val;
+    }
+
+    // 2. Word numbers e.g. "dua puluh", "sepuluh", "tiga", "dua", "satu"
+    const tokens = cleaned.split(/\s+/);
+    const wordMap = {
+      sebungkus: 1, segelas: 1, sebutir: 1, sebuah: 1, sekardus: 1, sedus: 1,
+      satu: 1, dua: 2, tiga: 3, empat: 4, lima: 5, enam: 6, tujuh: 7, delapan: 8, sembilan: 9,
+      sepuluh: 10, sebelas: 11
+    };
+    for (let i = 0; i < tokens.length; i++) {
+      const tok = tokens[i];
+      if (wordMap[tok] !== undefined) {
+        const next = tokens[i + 1];
+        if (next === 'puluh') {
+          const nextNext = tokens[i + 2];
+          const units = (nextNext && wordMap[nextNext]) ? wordMap[nextNext] : 0;
+          return wordMap[tok] * 10 + units;
+        }
+        if (next === 'belas') {
+          return 10 + wordMap[tok];
+        }
+        return wordMap[tok];
+      }
+    }
+
+    return null;
   }
 }
