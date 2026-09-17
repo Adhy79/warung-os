@@ -10,6 +10,7 @@ export const INTENTS = {
   STOCK_REMOVE: 'STOCK_REMOVE',
   QUERY_SALES: 'QUERY_SALES',
   QUERY_CASH: 'QUERY_CASH',
+  QUERY_EXPENSE: 'QUERY_EXPENSE',
   QUERY_STOCK: 'QUERY_STOCK',
   QUERY_DEBT: 'QUERY_DEBT',
   QUERY_BEST_SELLER: 'QUERY_BEST_SELLER',
@@ -90,16 +91,17 @@ export function detectIntent(text, { hasPerson = false, hasItems = false, hasAmo
     return { intent: INTENTS.QUERY_BEST_SELLER, confidence: 0.98 };
   }
 
-  // Query Sales Today
+  // Query Sales (Today, Week, Month)
   if (
     (lower.includes('jualan') || lower.includes('penjualan') || lower.includes('laku')) &&
-    (lower.includes('hari ini') || lower.includes('berapa') || lower.includes('total'))
+    (lower.includes('hari ini') || lower.includes('minggu ini') || lower.includes('7 hari') || lower.includes('bulan ini') || lower.includes('berapa') || lower.includes('total'))
   ) {
     return { intent: INTENTS.QUERY_SALES, confidence: 0.98 };
   }
 
-  // Query Cash in Drawer (P0 #4)
+  // Query Cash in Drawer & Uang Masuk
   if (
+    lower.includes('uang masuk') ||
     lower.includes('uang di warung') ||
     lower.includes('uang warung') ||
     lower.includes('uang di laci') ||
@@ -114,6 +116,15 @@ export function detectIntent(text, { hasPerson = false, hasItems = false, hasAmo
     lower.includes('uang tunai hari ini')
   ) {
     return { intent: INTENTS.QUERY_CASH, confidence: 0.98 };
+  }
+
+  // Query Expenses (Read-only query)
+  if (
+    (lower.includes('pengeluaran') || lower.includes('uang keluar') || lower.includes('belanja modal')) &&
+    (lower.includes('berapa') || lower.includes('total') || lower.includes('hari ini') || lower.includes('minggu ini') || lower.includes('bulan ini')) &&
+    !hasAmount
+  ) {
+    return { intent: INTENTS.QUERY_EXPENSE, confidence: 0.98 };
   }
 
   // Query Debt: "Siapa yang masih ngutang?", "Berapa utang Budi?", "Utang Budi tinggal berapa?", "Siapa yang belum bayar?", "Yang tadi utang siapa ya?" (P0 #3)

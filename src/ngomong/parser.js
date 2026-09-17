@@ -184,6 +184,7 @@ export class NgomongParser {
     if (
       intent === INTENTS.QUERY_SALES ||
       intent === INTENTS.QUERY_CASH ||
+      intent === INTENTS.QUERY_EXPENSE ||
       intent === INTENTS.QUERY_DEBT ||
       intent === INTENTS.QUERY_STOCK ||
       intent === INTENTS.QUERY_BEST_SELLER ||
@@ -427,14 +428,49 @@ export class NgomongParser {
     };
   }
 
+  extractPeriod(text) {
+    const lower = (text || '').toLowerCase();
+    if (lower.includes('minggu ini') || lower.includes('7 hari') || lower.includes('seminggu')) {
+      return 'week';
+    }
+    if (lower.includes('bulan ini') || lower.includes('sebulan')) {
+      return 'month';
+    }
+    return 'today';
+  }
+
   /**
    * Handle read-only questions directly from live store data
    */
   handleQueryIntent(intent, text, matchedProducts, matchedPersonResult) {
     const formatRp = (num) => 'Rp' + Math.round(num || 0).toLocaleString('id-ID');
+    const lower = (text || '').toLowerCase();
+    const period = this.extractPeriod(text);
 
     switch (intent) {
       case INTENTS.QUERY_SALES: {
+        if (period === 'week') {
+          const totalSales = this.store.getSalesTotalByPeriod('week');
+          const salesPaid = this.store.getSalesPaidByPeriod('week');
+          const salesDebt = this.store.getSalesDebtByPeriod('week');
+          return {
+            status: 'QUERY_ANSWER',
+            intent,
+            confidence: 0.98,
+            answer: `Jualan minggu ini (7 hari) ${formatRp(totalSales)} 😊\n(Sudah dibayar: ${formatRp(salesPaid)}${salesDebt > 0 ? `, Masih ngutang: ${formatRp(salesDebt)}` : ''})`
+          };
+        }
+        if (period === 'month') {
+          const totalSales = this.store.getSalesTotalByPeriod('month');
+          const salesPaid = this.store.getSalesPaidByPeriod('month');
+          const salesDebt = this.store.getSalesDebtByPeriod('month');
+          return {
+            status: 'QUERY_ANSWER',
+            intent,
+            confidence: 0.98,
+            answer: `Jualan bulan ini ${formatRp(totalSales)} 😊\n(Sudah dibayar: ${formatRp(salesPaid)}${salesDebt > 0 ? `, Masih ngutang: ${formatRp(salesDebt)}` : ''})`
+          };
+        }
         const totalSales = this.store.getTodaySalesTotal();
         const salesPaid = this.store.getTodaySalesPaid();
         const salesDebt = this.store.getTodaySalesDebt();
@@ -447,6 +483,26 @@ export class NgomongParser {
       }
 
       case INTENTS.QUERY_CASH: {
+        if (lower.includes('uang masuk')) {
+          if (period === 'week') {
+            const cashWeek = this.store.getCashReceivedByPeriod('week');
+            return {
+              status: 'QUERY_ANSWER',
+              intent,
+              confidence: 0.98,
+              answer: `Uang masuk minggu ini (7 hari) ada ${formatRp(cashWeek)} 😊`
+            };
+          }
+          if (period === 'month') {
+            const cashMonth = this.store.getCashReceivedByPeriod('month');
+            return {
+              status: 'QUERY_ANSWER',
+              intent,
+              confidence: 0.98,
+              answer: `Uang masuk bulan ini ada ${formatRp(cashMonth)} 😊`
+            };
+          }
+        }
         const cashAkhir = this.store.getTodayUangKasAkhir ? this.store.getTodayUangKasAkhir() : this.store.getTodayCashReceived();
         const cashToday = this.store.getTodayCashReceived();
         const expenses = this.store.getTodayExpensesTotal();
@@ -455,6 +511,21 @@ export class NgomongParser {
           intent,
           confidence: 0.98,
           answer: `Uang di laci/kas warung sekarang ada ${formatRp(cashAkhir)} 😊\n(Uang masuk hari ini: ${formatRp(cashToday)}, Pengeluaran: ${formatRp(expenses)})`
+        };
+      }
+
+      case INTENTS.QUERY_EXPENSE: {
+        let label = 'hari ini';
+        if (period === 'week') label = 'minggu ini (7 hari)';
+        if (period === 'month') label = 'bulan ini';
+        const expTotal = this.store.getExpensesTotalByPeriod
+          ? this.store.getExpensesTotalByPeriod(period)
+          : this.store.getTodayExpensesTotal();
+        return {
+          status: 'QUERY_ANSWER',
+          intent,
+          confidence: 0.98,
+          answer: `Pengeluaran warung ${label} ada ${formatRp(expTotal)} 😊`
         };
       }
 
@@ -510,6 +581,22 @@ export class NgomongParser {
       }
 
       case INTENTS.QUERY_BEST_SELLER: {
+        let periodLabel = 'hari ini';
+        if (period === 'week') periodLabel = 'minggu ini';
+        if (period === 'month') periodLabel = 'bulan ini';
+
+        if (period !== 'today' && this.store.getBestSellersByPeriod) {
+          const topList = this.store.getBestSellersByPeriod(period, 1);
+          if (topList.length > 0) {
+            return {
+              status: 'QUERY_ANSWER',
+              intent,
+              confidence: 0.98,
+              answer: `Barang paling banyak terjual ${periodLabel} adalah:\n• ${topList[0].name} (${topList[0].quantity} terjual) 🏆`
+            };
+          }
+        }
+
         const sales = this.store.getTodayGoodsSales();
         const itemCounts = {};
         sales.forEach((s) => {

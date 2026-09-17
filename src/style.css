@@ -2173,3 +2173,298 @@ html, body {
   background: var(--color-primary-dark);
 }
 
+/* ==========================================================================
+   V2.0 — LAPORAN WARUNG
+   ========================================================================== */
+.laporan-header-box {
+  margin-bottom: 16px;
+}
+
+.laporan-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.laporan-page-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--color-text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.laporan-period-badge {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-light);
+  border: 1.5px solid var(--color-primary-border);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.laporan-subtitle {
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+/* Big Period Tabs */
+.laporan-period-tabs {
+  display: flex;
+  gap: 8px;
+  background: var(--color-card-bg);
+  padding: 6px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.period-tab-btn {
+  flex: 1;
+  min-height: 48px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.period-tab-btn.active {
+  background: linear-gradient(135deg, #E05A2B, #C24417);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(224, 90, 43, 0.3);
+}
+
+.period-tab-btn:active {
+  transform: scale(0.96);
+}
+
+/* 4 Summary Cards Grid */
+.laporan-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.laporan-metric-card {
+  background: var(--color-card-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+}
+
+.laporan-metric-card .metric-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.laporan-metric-card .metric-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.laporan-metric-card .metric-label {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.laporan-metric-card .metric-amount {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--color-text-main);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.laporan-metric-card .metric-amount.val-green {
+  color: #047857;
+}
+
+.laporan-metric-card .metric-amount.val-orange {
+  color: #C24417;
+}
+
+.laporan-metric-card .metric-amount.val-primary {
+  color: var(--color-primary-dark);
+}
+
+.laporan-metric-card .metric-desc {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Empty Period Box */
+.laporan-empty-box {
+  background: #FFFFFF;
+  border: 2px dashed var(--color-primary-border);
+  border-radius: var(--radius-xl);
+  padding: 20px 16px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.laporan-empty-box .empty-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--color-text-main);
+  margin-bottom: 4px;
+}
+
+.laporan-empty-box .empty-sub {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+/* Section Cards: Paling Laku, Utang, Pengeluaran */
+.laporan-section-card {
+  background: var(--color-card-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.laporan-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.laporan-section-header .section-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  margin-right: 6px;
+}
+
+.laporan-section-header .section-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--color-text-main);
+  flex: 1;
+}
+
+.laporan-section-header .section-badge-right {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: var(--color-danger);
+}
+
+.laporan-section-header .section-badge-right.val-orange {
+  color: #C24417;
+}
+
+.laporan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.laporan-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--color-bg-app);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.laporan-list-item .item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.laporan-list-item .item-rank {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: var(--color-primary-dark);
+  min-width: 24px;
+}
+
+.laporan-list-item .item-emoji {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.laporan-list-item .item-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.laporan-list-item .item-subtext {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.laporan-list-item .item-badge-qty {
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-light);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.laporan-list-item.debt-row {
+  background: #FEF2F2;
+  border-color: #FECACA;
+}
+
+.laporan-list-item .debt-amount {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #B91C1C;
+}
+
+.laporan-list-item .expense-amount {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #C24417;
+}
+
+.laporan-list-empty {
+  padding: 14px;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-bg-app);
+  border-radius: var(--radius-md);
+  font-style: italic;
+}
+
+.laporan-list-empty.success-empty {
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1.5px solid #A7F3D0;
+  font-style: normal;
+  font-weight: 700;
+}
+
+

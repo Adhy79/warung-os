@@ -432,6 +432,118 @@ class Store {
     return this.getTodayUangTersisa();
   }
 
+  // ==========================================================================
+  // V2.0 — PERIOD-BASED REPORTING METHODS ('today' | 'week' | 'month')
+  // ==========================================================================
+
+  isDateInPeriod(dateStr, period = 'today') {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const now = new Date();
+
+    if (period === 'today') {
+      return d.toDateString() === now.toDateString();
+    }
+
+    if (period === 'week' || period === '7days') {
+      // 7 days inclusive: today minus 6 days at 00:00:00 local time
+      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 0, 0, 0, 0);
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      return d >= weekStart && d <= endOfToday;
+    }
+
+    if (period === 'month') {
+      // Current calendar month: 1st of month at 00:00:00 local time
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      return d >= monthStart && d <= endOfToday;
+    }
+
+    return d.toDateString() === now.toDateString();
+  }
+
+  // Merchandise sales in period (excludes debt payments)
+  getGoodsSalesByPeriod(period = 'today') {
+    return (this.data.sales || []).filter((s) => {
+      return this.isDateInPeriod(s.createdAt, period) && !s.isDebtPayment;
+    });
+  }
+
+  // Total value of all goods sold in period (cash + debt)
+  getSalesTotalByPeriod(period = 'today') {
+    return this.getGoodsSalesByPeriod(period).reduce((sum, s) => sum + (s.total || 0), 0);
+  }
+
+  getSalesCountByPeriod(period = 'today') {
+    return this.getGoodsSalesByPeriod(period).length;
+  }
+
+  // Value of goods sold in period paid in cash
+  getSalesPaidByPeriod(period = 'today') {
+    return this.getGoodsSalesByPeriod(period)
+      .filter((s) => !s.isDebt)
+      .reduce((sum, s) => sum + (s.total || 0), 0);
+  }
+
+  // Value of goods sold in period on debt
+  getSalesDebtByPeriod(period = 'today') {
+    return this.getGoodsSalesByPeriod(period)
+      .filter((s) => s.isDebt)
+      .reduce((sum, s) => sum + (s.total || 0), 0);
+  }
+
+  // Debt payments received in period
+  getDebtPaymentsByPeriod(period = 'today') {
+    return (this.data.sales || [])
+      .filter((s) => this.isDateInPeriod(s.createdAt, period) && s.isDebtPayment)
+      .reduce((sum, s) => sum + (s.total || 0), 0);
+  }
+
+  // Total actual physical cash received in period:
+  // = (Cash from cash sales) + (Debt repayments received)
+  getCashReceivedByPeriod(period = 'today') {
+    return this.getSalesPaidByPeriod(period) + this.getDebtPaymentsByPeriod(period);
+  }
+
+  // Expenses in period
+  getExpensesByPeriod(period = 'today') {
+    return (this.data.expenses || []).filter((e) => {
+      return this.isDateInPeriod(e.createdAt, period);
+    });
+  }
+
+  getExpensesTotalByPeriod(period = 'today') {
+    return this.getExpensesByPeriod(period).reduce((sum, e) => sum + (e.amount || 0), 0);
+  }
+
+  // Ranking best selling products in period
+  getBestSellersByPeriod(period = 'today', limit = 5) {
+    const sales = this.getGoodsSalesByPeriod(period);
+    const itemCounts = {};
+    sales.forEach((s) => {
+      (s.items || []).forEach((item) => {
+        const key = item.name;
+        itemCounts[key] = (itemCounts[key] || 0) + (item.quantity || 0);
+      });
+    });
+
+    const products = this.getProducts();
+    const productMap = new Map((products || []).map((p) => [p.name.toLowerCase().trim(), p]));
+
+    return Object.entries(itemCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([name, quantity]) => {
+        const p = productMap.get(name.toLowerCase().trim());
+        return {
+          name,
+          quantity,
+          emoji: p?.emoji || '🛍️',
+          unit: p?.unit || 'barang'
+        };
+      });
+  }
+
   getDebts() {
     return (this.data.debts || []).filter((d) => (d.totalDebt || 0) > 0);
   }

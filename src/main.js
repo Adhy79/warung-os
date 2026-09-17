@@ -6,6 +6,7 @@ import { renderJualan } from './components/jualan.js';
 import { renderBarang } from './components/barang.js';
 import { renderUang } from './components/uang.js';
 import { renderNgutang } from './components/ngutang.js';
+import { renderLaporan } from './components/laporan.js';
 import { renderNgomong } from './components/ngomong.js';
 import { renderTanya } from './components/tanya.js';
 import { openSettingsModal, applyFontSize } from './components/settingsModal.js';
@@ -77,6 +78,9 @@ function renderActiveTabContent(tabName, container) {
       break;
     case 'ngutang':
       renderNgutang(container);
+      break;
+    case 'laporan':
+      renderLaporan(container, switchTab);
       break;
     case 'ngomong':
     case 'tanya':
