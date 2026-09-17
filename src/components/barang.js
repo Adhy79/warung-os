@@ -45,7 +45,12 @@ export function renderBarang(container) {
                   <span class="stock-item-emoji">${p.emoji || '📦'}</span>
                   <div class="stock-item-info">
                     <div class="item-name">${p.name}</div>
-                    <div class="item-price">${formatRupiah(p.sellingPrice)} / ${p.unit || 'buah'}</div>
+                    <div class="item-price" style="font-weight: 800;">Harga Jual: ${formatRupiah(p.sellingPrice)} / ${p.unit || 'buah'}</div>
+                    <div style="font-size: 0.82rem; font-weight: 600; margin-top: 2px;">
+                      ${(p.costPrice && p.costPrice > 0)
+                        ? `<span style="color: var(--color-text-muted);">Harga Modal: ${formatRupiah(p.costPrice)}</span>`
+                        : `<span style="color: #92400E; background: #FEF3C7; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem;">Harga Modal belum diisi</span>`}
+                    </div>
                   </div>
                 </div>
 
@@ -388,11 +393,11 @@ export function renderBarang(container) {
           </div>
 
           <label class="input-money-label" style="text-align: center; font-size: 1.05rem; margin-bottom: 8px;">
-            Berapa jumlah barang di warung sekarang?
+            Berapa jumlah stok di warung sekarang?
           </label>
 
-          <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px;">
-            <button class="btn-huge btn-secondary" id="btn-stock-dec" style="flex: 1; min-height: 58px; font-size: 1.1rem; font-weight: 800; border-color: #FED7AA; color: #C24417;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
+            <button class="btn-huge btn-secondary" id="btn-stock-dec" style="flex: 1; min-height: 52px; font-size: 1.05rem; font-weight: 800; border-color: #FED7AA; color: #C24417;">
               <span>➖ Kurangi</span>
             </button>
             <input 
@@ -400,15 +405,40 @@ export function renderBarang(container) {
               id="input-stock-val" 
               class="input-money-box" 
               value="${currentStock}" 
-              style="text-align: center; max-width: 110px; font-size: 2.2rem; font-weight: 900;" 
+              style="text-align: center; max-width: 100px; font-size: 2rem; font-weight: 900;" 
             />
-            <button class="btn-huge btn-secondary" id="btn-stock-inc" style="flex: 1; min-height: 58px; font-size: 1.1rem; font-weight: 800; border-color: #A7F3D0; color: #047857;">
+            <button class="btn-huge btn-secondary" id="btn-stock-inc" style="flex: 1; min-height: 52px; font-size: 1.05rem; font-weight: 800; border-color: #A7F3D0; color: #047857;">
               <span>➕ Tambah</span>
             </button>
           </div>
 
+          <div class="input-money-container" style="margin-bottom: 12px; text-align: left;">
+            <label class="input-money-label" for="input-edit-sell">Harga Jual (Wajib):</label>
+            <input 
+              type="text" 
+              inputmode="numeric" 
+              id="input-edit-sell" 
+              class="input-money-box" 
+              value="${formatRupiah(product.sellingPrice)}" 
+              style="font-size: 1.2rem; font-weight: 800;"
+            />
+          </div>
+
+          <div class="input-money-container" style="margin-bottom: 18px; text-align: left;">
+            <label class="input-money-label" for="input-edit-cost">Harga Modal (Opsional — boleh diisi nanti):</label>
+            <input 
+              type="text" 
+              inputmode="numeric" 
+              id="input-edit-cost" 
+              class="input-money-box" 
+              value="${product.costPrice ? formatRupiah(product.costPrice) : ''}" 
+              placeholder="Rp0" 
+              style="font-size: 1.15rem;"
+            />
+          </div>
+
           <button class="btn-huge btn-primary" id="btn-save-stock-update" style="margin-bottom: 10px;">
-            <span>SIMPAN JUMLAH BARANG</span>
+            <span>SIMPAN PERUBAHAN BARANG</span>
             <span>✅</span>
           </button>
           
@@ -434,12 +464,31 @@ export function renderBarang(container) {
       inputVal.value = val;
     });
 
+    const editSellInput = document.getElementById('input-edit-sell');
+    editSellInput?.addEventListener('input', (e) => {
+      const num = parseRupiahInput(e.target.value);
+      e.target.value = num ? formatRupiah(num) : '';
+    });
+
+    const editCostInput = document.getElementById('input-edit-cost');
+    editCostInput?.addEventListener('input', (e) => {
+      const num = parseRupiahInput(e.target.value);
+      e.target.value = num ? formatRupiah(num) : '';
+    });
+
     document.getElementById('btn-save-stock-update')?.addEventListener('click', () => {
       const updatedStock = Math.max(0, parseInt(inputVal.value, 10) || 0);
-      store.updateProduct(productId, { stock: updatedStock });
+      const updatedSell = parseRupiahInput(editSellInput?.value) || product.sellingPrice;
+      const updatedCost = parseRupiahInput(editCostInput?.value) || 0;
+
+      store.updateProduct(productId, {
+        stock: updatedStock,
+        sellingPrice: updatedSell,
+        costPrice: updatedCost
+      });
       modalContainer.innerHTML = '';
       renderView();
-      showToast('Stok berhasil diperbarui 😊');
+      showToast('Barang berhasil diperbarui 😊');
     });
 
     document.getElementById('btn-delete-prod')?.addEventListener('click', () => {

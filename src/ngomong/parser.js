@@ -185,6 +185,7 @@ export class NgomongParser {
       intent === INTENTS.QUERY_SALES ||
       intent === INTENTS.QUERY_CASH ||
       intent === INTENTS.QUERY_EXPENSE ||
+      intent === INTENTS.QUERY_MARGIN ||
       intent === INTENTS.QUERY_DEBT ||
       intent === INTENTS.QUERY_STOCK ||
       intent === INTENTS.QUERY_BEST_SELLER ||
@@ -526,6 +527,23 @@ export class NgomongParser {
           intent,
           confidence: 0.98,
           answer: `Pengeluaran warung ${label} ada ${formatRp(expTotal)} 😊`
+        };
+      }
+
+      case INTENTS.QUERY_MARGIN: {
+        let label = 'hari ini';
+        if (period === 'week') label = 'minggu ini (7 hari)';
+        if (period === 'month') label = 'bulan ini';
+        const report = this.store.getMarginReportByPeriod(period);
+        let note = '';
+        if (report.itemsWithoutCostCount > 0) {
+          note = `\n(Catatan: Ada ${report.itemsWithoutCostCount} barang laku yang modalnya belum diisi)`;
+        }
+        return {
+          status: 'QUERY_ANSWER',
+          intent,
+          confidence: 0.98,
+          answer: `Perkiraan selisih jualan ${label} ada ${formatRp(report.totalMargin)} 😊${note}`
         };
       }
 

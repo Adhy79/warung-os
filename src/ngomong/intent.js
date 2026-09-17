@@ -11,6 +11,7 @@ export const INTENTS = {
   QUERY_SALES: 'QUERY_SALES',
   QUERY_CASH: 'QUERY_CASH',
   QUERY_EXPENSE: 'QUERY_EXPENSE',
+  QUERY_MARGIN: 'QUERY_MARGIN',
   QUERY_STOCK: 'QUERY_STOCK',
   QUERY_DEBT: 'QUERY_DEBT',
   QUERY_BEST_SELLER: 'QUERY_BEST_SELLER',
@@ -89,6 +90,16 @@ export function detectIntent(text, { hasPerson = false, hasItems = false, hasAmo
     lower.includes('terlaris')
   ) {
     return { intent: INTENTS.QUERY_BEST_SELLER, confidence: 0.98 };
+  }
+
+  // Query Perkiraan Selisih (V2.1 Read-only query)
+  if (
+    lower.includes('selisih') ||
+    lower.includes('margin') ||
+    lower.includes('perkiraan selisih') ||
+    lower.includes('selisih jualan')
+  ) {
+    return { intent: INTENTS.QUERY_MARGIN, confidence: 0.98 };
   }
 
   // Query Sales (Today, Week, Month)

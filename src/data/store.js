@@ -544,6 +544,51 @@ class Store {
       });
   }
 
+  // ==========================================================================
+  // V2.1 — PERKIRAAN SELISIH (HARGA JUAL - HARGA MODAL SNAPSHOT)
+  // ==========================================================================
+
+  getMarginReportByPeriod(period = 'today') {
+    const sales = this.getGoodsSalesByPeriod(period);
+    let totalMargin = 0;
+    let totalCost = 0;
+    let itemsWithCostCount = 0;
+    let itemsWithoutCostCount = 0;
+    let salesWithCostTotal = 0;
+    let salesWithoutCostTotal = 0;
+
+    sales.forEach((s) => {
+      (s.items || []).forEach((item) => {
+        const cost = Number(item.costPrice) || 0;
+        const price = Number(item.price) || 0;
+        const qty = Number(item.quantity) || 0;
+        if (cost > 0) {
+          totalMargin += (price - cost) * qty;
+          totalCost += cost * qty;
+          salesWithCostTotal += price * qty;
+          itemsWithCostCount += qty;
+        } else {
+          itemsWithoutCostCount += qty;
+          salesWithoutCostTotal += price * qty;
+        }
+      });
+    });
+
+    return {
+      totalMargin,
+      totalCost,
+      salesWithCostTotal,
+      salesWithoutCostTotal,
+      itemsWithCostCount,
+      itemsWithoutCostCount,
+      hasIncompleteCost: itemsWithoutCostCount > 0
+    };
+  }
+
+  getEstimatedMarginByPeriod(period = 'today') {
+    return this.getMarginReportByPeriod(period).totalMargin;
+  }
+
   getDebts() {
     return (this.data.debts || []).filter((d) => (d.totalDebt || 0) > 0);
   }
@@ -581,12 +626,19 @@ class Store {
     const saleId = generateId('sale');
     const nowIso = new Date().toISOString();
 
-    // 1. Decrement product stock
-    items.forEach((item) => {
+    // 1. Decrement product stock and snapshot costPrice
+    const snapshottedItems = (items || []).map((item) => {
       const prod = this.data.products.find((p) => p.id === item.productId);
       if (prod) {
         prod.stock = Math.max(0, (prod.stock || 0) - item.quantity);
       }
+      const costSnapshot = item.costPrice !== undefined
+        ? Number(item.costPrice) || 0
+        : (prod && Number(prod.costPrice) > 0 ? Number(prod.costPrice) : 0);
+      return {
+        ...item,
+        costPrice: costSnapshot
+      };
     });
 
     // 2. If it's debt, record to debts ledger
@@ -624,7 +676,7 @@ class Store {
             id: generateId('dh'),
             type: 'debt',
             amount: total,
-            description: items.map((i) => `${i.name} × ${i.quantity}`).join(', '),
+            description: snapshottedItems.map((i) => `${i.name} × ${i.quantity}`).join(', '),
             createdAt: nowIso
           });
         }
@@ -639,7 +691,7 @@ class Store {
       change: isDebt ? 0 : change,
       isDebt: !!isDebt,
       debtorId: targetDebtorId || null,
-      items,
+      items: snapshottedItems,
       createdAt: nowIso
     };
 

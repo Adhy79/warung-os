@@ -17,6 +17,7 @@ export function renderLaporan(container, navigateToTab) {
     const expenses = store.getExpensesByPeriod(currentPeriod);
     const debts = store.getDebts();
     const totalDebt = store.getTotalDebts();
+    const marginReport = store.getMarginReportByPeriod ? store.getMarginReportByPeriod(currentPeriod) : { totalMargin: 0, itemsWithCostCount: 0, itemsWithoutCostCount: 0 };
 
     // Period labels for display
     let periodLabel = 'Hari Ini';
@@ -91,6 +92,26 @@ export function renderLaporan(container, navigateToTab) {
           <div class="metric-amount val-primary">${formatRupiah(uangDiLaci)}</div>
           <div class="metric-desc">Uang kas yang ada saat ini</div>
         </div>
+      </div>
+
+      <!-- PERKIRAAN SELISIH (V2.1 - HARGA JUAL - HARGA MODAL SNAPSHOT) -->
+      <div class="laporan-section-card" style="border-left: 5px solid #059669; margin-bottom: 16px;">
+        <div class="laporan-section-header" style="margin-bottom: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="section-icon">📈</span>
+            <span class="section-title">Perkiraan Selisih (${periodLabel})</span>
+          </div>
+          <span style="font-size: 1.35rem; font-weight: 900; color: #047857;">${formatRupiah(marginReport.totalMargin)}</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--color-text-muted); font-weight: 600; margin: 0; line-height: 1.4;">
+          ${
+            marginReport.itemsWithoutCostCount > 0
+              ? `⚠️ Dihitung dari barang yang ada harga modalnya (${marginReport.itemsWithCostCount} barang). Ada ${marginReport.itemsWithoutCostCount} barang laku belum diisi modal.`
+              : (salesCount > 0
+                  ? `✅ Dihitung dari seluruh barang laku (${marginReport.itemsWithCostCount} barang: Harga Jual aktual - Harga Modal saat transaksi).`
+                  : `Belum ada barang laku pada periode ini.`)
+          }
+        </p>
       </div>
 
       <!-- 7. EMPTY STATE (Jika tidak ada transaksi pada periode) -->
