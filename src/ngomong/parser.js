@@ -225,7 +225,8 @@ export class NgomongParser {
       intent === INTENTS.QUERY_DEBT ||
       intent === INTENTS.QUERY_STOCK ||
       intent === INTENTS.QUERY_BEST_SELLER ||
-      intent === INTENTS.QUERY_RESTOCK
+      intent === INTENTS.QUERY_RESTOCK ||
+      intent === INTENTS.QUERY_OUT_OF_STOCK
     ) {
       return this.handleQueryIntent(intent, text, matchedProducts, matchedPersonResult);
     }
@@ -673,21 +674,28 @@ export class NgomongParser {
         const validProd = matchedProducts.find((p) => p.product);
         if (validProd && validProd.product) {
           const p = validProd.product;
+          const st = this.store.getStockStatus ? this.store.getStockStatus(p) : null;
+          let statusTag = '';
+          if (st) {
+            if (st.status === 'habis') statusTag = ' 🔴 (Habis)';
+            else if (st.status === 'menipis') statusTag = ' 🟠 (Mulai Menipis)';
+            else if (st.status === 'aman') statusTag = ' 🟢 (Masih Aman)';
+          }
           return {
             status: 'QUERY_ANSWER',
             intent,
             confidence: 0.98,
-            answer: `${p.name} tinggal ${p.stock} ${p.unit || 'buah'} 😊`
+            answer: `${p.name} tinggal ${p.stock} ${p.unit || 'buah'}${statusTag} 😊`
           };
         }
         // General stock inquiry
-        const low = this.store.getLowStockProducts();
+        const items = this.store.getPerluDibeli ? this.store.getPerluDibeli() : [];
         return {
           status: 'QUERY_ANSWER',
           intent,
           confidence: 0.95,
-          answer: low.length > 0
-            ? `Barang yang stoknya tinggal sedikit:\n${low.map((p) => `• ${p.name}: sisa ${p.stock}`).join('\n')}`
+          answer: items.length > 0
+            ? `Barang yang stoknya perlu diperhatikan:\n${items.map((it) => `• ${it.status === 'habis' ? '🔴' : '🟠'} ${it.product.name} — ${it.infoText}`).join('\n')}`
             : `Alhamdulillah semua stok barang masih aman, Bu 😊`
         };
       }
@@ -762,20 +770,44 @@ export class NgomongParser {
       }
 
       case INTENTS.QUERY_RESTOCK: {
-        const low = this.store.getLowStockProducts();
-        if (low.length > 0) {
+        const items = this.store.getPerluDibeli ? this.store.getPerluDibeli() : [];
+        if (items.length > 0) {
+          const lines = items.map((it) => {
+            const icon = it.status === 'habis' ? '🔴' : '🟠';
+            const info = it.status === 'habis' ? 'Habis' : `Tinggal ${it.product.stock} ${it.product.unit || ''}`.trim();
+            return `• ${icon} ${it.product.name} — ${info}`;
+          }).join('\n');
           return {
             status: 'QUERY_ANSWER',
             intent,
             confidence: 0.98,
-            answer: `Yang perlu diperhatikan besok:\n\n${low.map((p) => `${p.emoji || '📦'} ${p.name} — tinggal ${p.stock} ${p.unit || 'buah'}`).join('\n')}\n\nSebaiknya dicek sebelum belanja 😊`
+            answer: `Barang yang perlu dibeli:\n\n${lines}\n\nSebaiknya dicek sebelum belanja ya Bu 😊`
           };
         }
         return {
           status: 'QUERY_ANSWER',
           intent,
           confidence: 0.95,
-          answer: `Semua stok barang masih cukup untuk besok, Bu 😊`
+          answer: `Belum ada barang yang perlu dibeli, Bu. Semua stok masih aman 😊`
+        };
+      }
+
+      case INTENTS.QUERY_OUT_OF_STOCK: {
+        const outOfStock = this.store.getOutOfStockProducts ? this.store.getOutOfStockProducts() : [];
+        if (outOfStock.length > 0) {
+          const lines = outOfStock.map((p) => `• 🔴 ${p.name} — Habis (Stok 0 ${p.unit || ''})`.trim()).join('\n');
+          return {
+            status: 'QUERY_ANSWER',
+            intent,
+            confidence: 0.98,
+            answer: `Barang yang habis di warung:\n\n${lines}\n\nPerlu segera dibeli ya Bu 😊`
+          };
+        }
+        return {
+          status: 'QUERY_ANSWER',
+          intent,
+          confidence: 0.95,
+          answer: `Alhamdulillah tidak ada barang yang habis di warung saat ini, Bu 😊`
         };
       }
 

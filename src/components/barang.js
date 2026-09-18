@@ -43,7 +43,7 @@ export function renderBarang(container) {
         <div class="stock-list">
           ${products
             .map((p) => {
-              const isLow = (p.stock || 0) <= (p.lowStockThreshold || 5);
+              const status = store.getStockStatus(p);
               return `
               <div class="stock-item-card" data-id="${p.id}">
                 <div class="stock-item-left">
@@ -56,23 +56,22 @@ export function renderBarang(container) {
                         ? `<span style="color: var(--color-text-muted);">Harga Modal: ${formatRupiah(p.costPrice)}</span>`
                         : `<span style="color: #92400E; background: #FEF3C7; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem;">Harga Modal belum diisi</span>`}
                     </div>
+                    ${p.stockMinimum && p.stockMinimum > 0
+                      ? `<div style="font-size: 0.78rem; color: var(--color-text-muted); margin-top: 2px;">Batas stok menipis: ${p.stockMinimum} ${p.unit || ''}</div>`
+                      : ''}
                   </div>
                 </div>
 
                 <div class="stock-item-right">
-                  <div class="stock-qty-text">${p.stock} ${p.unit || ''}</div>
+                  <div class="stock-qty-text">Stok: ${p.stock} ${p.unit || ''}</div>
                   ${
-                    isLow
+                    status
                       ? `
-                    <span class="badge badge-warning">
-                      ⚠️ Tinggal ${p.stock}
+                    <span class="badge" style="background: ${status.code === 'HABIS' ? '#FEE2E2' : status.code === 'MULAI_MENIPIS' ? '#FEF3C7' : '#ECFDF5'}; color: ${status.code === 'HABIS' ? '#DC2626' : status.code === 'MULAI_MENIPIS' ? '#D97706' : '#059669'}; border: 1px solid ${status.code === 'HABIS' ? '#FCA5A5' : status.code === 'MULAI_MENIPIS' ? '#FCD34D' : '#A7F3D0'}; font-weight: 800; font-size: 0.85rem; padding: 3px 8px; border-radius: 6px;">
+                      ${status.badge}
                     </span>
                   `
-                      : `
-                    <span class="badge badge-success">
-                      Aman
-                    </span>
-                  `
+                      : ''
                   }
                   <div style="display: flex; gap: 6px; margin-top: 6px;">
                     <button class="btn-small btn-secondary btn-quick-purch" data-id="${p.id}" style="min-height: 42px; padding: 6px 10px; font-size: 0.9rem; font-weight: 800; background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8;">
@@ -350,6 +349,7 @@ export function renderBarang(container) {
     let sellingPrice = '';
     let stock = '10';
     let costPrice = '';
+    let stockMinimum = '';
     let unit = 'buah';
 
     const popularIcons = ['🍜', '🍲', '🥚', '🥤', '☕', '🍞', '🧼', '🧴', '🍘', '🍚', '📦'];
@@ -529,6 +529,21 @@ export function renderBarang(container) {
                 />
               </div>
 
+              <div class="input-money-container" style="margin-bottom: 14px;">
+                <label class="input-money-label" for="wiz-stock-min">Batas Stok Menipis (Opsional):</label>
+                <input 
+                  type="number" 
+                  id="wiz-stock-min" 
+                  class="input-money-box" 
+                  value="${stockMinimum}" 
+                  placeholder="Contoh: 5 (Kosongkan jika tidak perlu)" 
+                  style="font-size: 1.15rem;"
+                />
+                <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 4px;">
+                  Beri tahu jika stok barang ini mulai menipis dan perlu dibeli.
+                </div>
+              </div>
+
               <div style="background: #ECFDF5; border: 1.5px solid #A7F3D0; border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px;">
                 <div style="font-weight: 800; color: #065F46; font-size: 1.05rem;">Sudah siap disimpan 😊</div>
                 <div style="font-size: 0.9rem; color: #047857; margin-top: 2px;">
@@ -561,15 +576,22 @@ export function renderBarang(container) {
           e.target.value = costPrice ? formatRupiah(costPrice) : '';
         });
 
+        const minInput = document.getElementById('wiz-stock-min');
+        minInput?.addEventListener('input', (e) => {
+          stockMinimum = e.target.value;
+        });
+
         document.getElementById('btn-wiz-save')?.addEventListener('click', () => {
           const finalStock = parseInt(document.getElementById('wiz-stock')?.value, 10) || 0;
+          const finalMin = parseInt(document.getElementById('wiz-stock-min')?.value, 10) || 0;
           store.addProduct({
             name,
             emoji,
             sellingPrice: Number(sellingPrice),
             costPrice: Number(costPrice) || 0,
             stock: finalStock,
-            unit: 'buah'
+            unit: 'buah',
+            stockMinimum: finalMin
           });
 
           modalContainer.innerHTML = '';
@@ -638,7 +660,7 @@ export function renderBarang(container) {
             />
           </div>
 
-          <div class="input-money-container" style="margin-bottom: 18px; text-align: left;">
+          <div class="input-money-container" style="margin-bottom: 12px; text-align: left;">
             <label class="input-money-label" for="input-edit-cost">Harga Modal (Opsional — boleh diisi nanti):</label>
             <input 
               type="text" 
@@ -649,6 +671,21 @@ export function renderBarang(container) {
               placeholder="Rp0" 
               style="font-size: 1.15rem;"
             />
+          </div>
+
+          <div class="input-money-container" style="margin-bottom: 18px; text-align: left;">
+            <label class="input-money-label" for="input-edit-min">Batas Stok Menipis (Opsional):</label>
+            <input 
+              type="number" 
+              id="input-edit-min" 
+              class="input-money-box" 
+              value="${product.stockMinimum !== undefined && product.stockMinimum > 0 ? product.stockMinimum : ''}" 
+              placeholder="Contoh: 5 (Kosongkan jika tidak perlu)" 
+              style="font-size: 1.15rem;"
+            />
+            <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 4px;">
+              Beri tahu jika stok tinggal segini agar ingat kulakan.
+            </div>
           </div>
 
           <button class="btn-huge btn-primary" id="btn-save-stock-update" style="margin-bottom: 10px;">
@@ -694,11 +731,13 @@ export function renderBarang(container) {
       const updatedStock = Math.max(0, parseInt(inputVal.value, 10) || 0);
       const updatedSell = parseRupiahInput(editSellInput?.value) || product.sellingPrice;
       const updatedCost = parseRupiahInput(editCostInput?.value) || 0;
+      const updatedMin = parseInt(document.getElementById('input-edit-min')?.value, 10) || 0;
 
       store.updateProduct(productId, {
         stock: updatedStock,
         sellingPrice: updatedSell,
-        costPrice: updatedCost
+        costPrice: updatedCost,
+        stockMinimum: updatedMin
       });
       modalContainer.innerHTML = '';
       renderView();

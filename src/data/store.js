@@ -20,6 +20,48 @@ export function generateId(prefix = 'id') {
   return `${prefix}-${Date.now()}-${idCounter}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+// V2.3 — Product Stock Status Determiner
+export function getProductStockStatus(product) {
+  if (!product) return null;
+  const stock = Number(product.stock) || 0;
+  const min = product.stockMinimum !== undefined && product.stockMinimum !== null
+    ? Number(product.stockMinimum)
+    : 0;
+
+  if (stock <= 0) {
+    return {
+      status: 'habis',
+      code: 'HABIS',
+      label: 'Habis',
+      badge: '🔴 Habis',
+      color: 'red'
+    };
+  }
+
+  // Jika stockMinimum = 0 / belum diatur: jangan membuat status berdasarkan batas minimum
+  if (min <= 0) {
+    return null;
+  }
+
+  if (stock <= min) {
+    return {
+      status: 'menipis',
+      code: 'MULAI_MENIPIS',
+      label: 'Mulai Menipis',
+      badge: '🟠 Mulai Menipis',
+      color: 'amber'
+    };
+  }
+
+  return {
+    status: 'aman',
+    code: 'MASIH_AMAN',
+    label: 'Masih Aman',
+    badge: '🟢 Masih Aman',
+    color: 'emerald'
+  };
+}
+
 // Generate Realistic Demo Data matching user specs
 export function getInitialDemoData() {
   const now = new Date();
@@ -43,6 +85,7 @@ export function getInitialDemoData() {
         costPrice: 2800,
         stock: 20,
         unit: 'bungkus',
+        stockMinimum: 5,
         lowStockThreshold: 5
       },
       {
@@ -53,6 +96,7 @@ export function getInitialDemoData() {
         costPrice: 2800,
         stock: 15,
         unit: 'bungkus',
+        stockMinimum: 5,
         lowStockThreshold: 5
       },
       {
@@ -63,6 +107,7 @@ export function getInitialDemoData() {
         costPrice: 2400,
         stock: 12,
         unit: 'butir',
+        stockMinimum: 5,
         lowStockThreshold: 5
       },
       {
@@ -73,6 +118,7 @@ export function getInitialDemoData() {
         costPrice: 1500,
         stock: 20,
         unit: 'gelas',
+        stockMinimum: 5,
         lowStockThreshold: 5
       },
       {
@@ -83,6 +129,7 @@ export function getInitialDemoData() {
         costPrice: 3000,
         stock: 10,
         unit: 'cangkir',
+        stockMinimum: 4,
         lowStockThreshold: 4
       }
     ],
@@ -263,6 +310,7 @@ export function getInitialDemoData() {
       }
     ],
     purchases: [],
+    shoppingList: [],
     settings: {
       fontSize: 'normal', // 'normal' | 'large' | 'xlarge'
       speechEnabled: true
@@ -278,6 +326,9 @@ class Store {
     if (!this.data.purchases) {
       this.data.purchases = [];
     }
+    if (!this.data.shoppingList) {
+      this.data.shoppingList = [];
+    }
   }
 
   load() {
@@ -287,11 +338,23 @@ class Store {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (!parsed.purchases) parsed.purchases = [];
+          if (!parsed.shoppingList) parsed.shoppingList = [];
+          if (parsed.products) {
+            parsed.products.forEach((p) => {
+              if (p.stockMinimum === undefined) p.stockMinimum = 0;
+            });
+          }
           return parsed;
         }
       } else if (this.memoryStorage) {
         const parsed = JSON.parse(this.memoryStorage);
         if (!parsed.purchases) parsed.purchases = [];
+        if (!parsed.shoppingList) parsed.shoppingList = [];
+        if (parsed.products) {
+          parsed.products.forEach((p) => {
+            if (p.stockMinimum === undefined) p.stockMinimum = 0;
+          });
+        }
         return parsed;
       }
     } catch (e) {
@@ -347,6 +410,98 @@ class Store {
     return this.data.products.filter(
       (p) => (p.stock || 0) <= (p.lowStockThreshold || 5)
     );
+  }
+
+  // ==========================================================================
+  // V2.3 — STOK LEBIH PINTAR & STATUS STOK
+  // ==========================================================================
+
+  getStockStatus(product) {
+    return getProductStockStatus(product);
+  }
+
+  // Barang yang perlu dibeli: stok habis (<= 0) atau stok <= batas minimum (> 0)
+  getPerluDibeli() {
+    const products = this.getProducts();
+    const result = [];
+    for (const p of products) {
+      const stock = Number(p.stock) || 0;
+      const min = Number(p.stockMinimum) || 0;
+      if (stock <= 0) {
+        result.push({
+          product: p,
+          status: 'habis',
+          code: 'HABIS',
+          badge: '🔴 Habis',
+          displayText: `${p.name} — Habis`,
+          infoText: 'Habis',
+          emoji: p.emoji || '📦'
+        });
+      } else if (min > 0 && stock <= min) {
+        result.push({
+          product: p,
+          status: 'menipis',
+          code: 'MULAI_MENIPIS',
+          badge: '🟠 Mulai Menipis',
+          displayText: `${p.name} — Tinggal ${stock}`,
+          infoText: `Tinggal ${stock} ${p.unit || ''}`.trim(),
+          emoji: p.emoji || '📦'
+        });
+      }
+    }
+    return result;
+  }
+
+  // Barang yang stoknya <= 0
+  getOutOfStockProducts() {
+    return this.getProducts().filter((p) => (Number(p.stock) || 0) <= 0);
+  }
+
+  // ==========================================================================
+  // V2.3 — DAFTAR YANG MAU DIBELI (CHECKLIST)
+  // Checklist murni: TIDAK otomatis mengubah stok atau uang
+  // ==========================================================================
+
+  getShoppingList() {
+    return this.data.shoppingList || [];
+  }
+
+  addShoppingItem(name) {
+    const cleanName = (name || '').trim();
+    if (!cleanName) return null;
+    if (!this.data.shoppingList) this.data.shoppingList = [];
+    const item = {
+      id: generateId('shop'),
+      name: cleanName,
+      isBought: false,
+      createdAt: new Date().toISOString()
+    };
+    this.data.shoppingList.push(item);
+    this.save();
+    return item;
+  }
+
+  toggleShoppingItem(id) {
+    if (!this.data.shoppingList) return null;
+    const item = this.data.shoppingList.find((i) => i.id === id);
+    if (item) {
+      item.isBought = !item.isBought;
+      this.save();
+      return item;
+    }
+    return null;
+  }
+
+  deleteShoppingItem(id) {
+    if (!this.data.shoppingList) return;
+    this.data.shoppingList = this.data.shoppingList.filter((i) => i.id !== id);
+    this.save();
+  }
+
+  clearBoughtShoppingItems() {
+    if (!this.data.shoppingList) return;
+    this.data.shoppingList = this.data.shoppingList.filter((i) => !i.isBought);
+    this.save();
   }
 
   getSales() {
@@ -743,7 +898,8 @@ class Store {
   }
 
   // Add or Edit Product
-  addProduct({ name, emoji = '📦', sellingPrice, costPrice = 0, stock = 10, unit = 'buah' }) {
+  addProduct({ name, emoji = '📦', sellingPrice, costPrice = 0, stock = 10, unit = 'buah', stockMinimum = 0 }) {
+    const minVal = Number(stockMinimum) || 0;
     const newProd = {
       id: generateId('prod'),
       name: name.trim(),
@@ -752,7 +908,8 @@ class Store {
       costPrice: Number(costPrice) || 0,
       stock: Number(stock) || 0,
       unit: unit || 'buah',
-      lowStockThreshold: 5
+      stockMinimum: minVal,
+      lowStockThreshold: minVal > 0 ? minVal : 5
     };
     this.data.products.push(newProd);
     this.save();
@@ -762,9 +919,16 @@ class Store {
   updateProduct(id, updates) {
     const prodIndex = this.data.products.findIndex((p) => p.id === id);
     if (prodIndex !== -1) {
+      const sanitized = { ...updates };
+      if (sanitized.stockMinimum !== undefined) {
+        sanitized.stockMinimum = Number(sanitized.stockMinimum) || 0;
+        if (sanitized.stockMinimum > 0) {
+          sanitized.lowStockThreshold = sanitized.stockMinimum;
+        }
+      }
       this.data.products[prodIndex] = {
         ...this.data.products[prodIndex],
-        ...updates
+        ...sanitized
       };
       this.save();
     }
@@ -947,6 +1111,7 @@ class Store {
       purchases: [],
       expenses: [],
       debts: [],
+      shoppingList: [],
       settings: { fontSize: 'normal', speechEnabled: true }
     };
     this.save(empty);

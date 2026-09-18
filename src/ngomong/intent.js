@@ -18,6 +18,7 @@ export const INTENTS = {
   QUERY_DEBT: 'QUERY_DEBT',
   QUERY_BEST_SELLER: 'QUERY_BEST_SELLER',
   QUERY_RESTOCK: 'QUERY_RESTOCK',
+  QUERY_OUT_OF_STOCK: 'QUERY_OUT_OF_STOCK',
   UNKNOWN: 'UNKNOWN'
 };
 
@@ -66,12 +67,42 @@ export function detectIntent(text, { hasPerson = false, hasItems = false, hasAmo
 
   // 1. READ-ONLY QUERIES (Instant Answers)
 
-  // Query Restock & Low Stock
+  // Query Out of Stock (hanya stok <= 0)
   if (
+    lower.includes('barang apa yang habis') ||
+    lower.includes('barang apa yang udah habis') ||
+    lower.includes('barang apa yang sudah habis') ||
+    lower.includes('barang yang habis') ||
+    lower.includes('apa yang habis') ||
+    lower.includes('apa saja yang habis') ||
+    lower.includes('stok apa yang habis') ||
+    lower.includes('barang habis apa') ||
+    lower.includes('daftar barang habis') ||
+    (lower.includes('stok habis') && !hasAmount && !lower.includes('kulakan') && !lower.includes('beli'))
+  ) {
+    return { intent: INTENTS.QUERY_OUT_OF_STOCK, confidence: 0.98 };
+  }
+
+  // Query Restock & Barang yang harus/perlu dibeli
+  if (
+    lower.includes('barang apa yang harus dibeli') ||
+    lower.includes('barang apa yang perlu dibeli') ||
+    lower.includes('barang apa yang mau dibeli') ||
+    lower.includes('barang yang harus dibeli') ||
+    lower.includes('barang yang perlu dibeli') ||
+    lower.includes('barang yang mau dibeli') ||
+    lower.includes('apa yang harus dibeli') ||
+    lower.includes('apa yang perlu dibeli') ||
+    lower.includes('yang harus dibeli') ||
+    lower.includes('yang perlu dibeli') ||
+    lower.includes('harus dibeli') ||
+    lower.includes('perlu dibeli') ||
+    lower.includes('harus beli apa') ||
+    lower.includes('perlu beli apa') ||
+    lower.includes('mau beli apa') ||
     lower.includes('besok belanja apa') ||
     lower.includes('belanja apa besok') ||
     lower.includes('mau belanja apa') ||
-    lower.includes('harus beli apa') ||
     lower.includes('perlu belanja apa') ||
     lower.includes('tinggal sedikit') ||
     lower.includes('mau habis') ||

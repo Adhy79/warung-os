@@ -198,7 +198,7 @@ export function matchSingleProduct(phrase, products = []) {
     .replace(/[.,;!?]/g, ' ')
     .replace(/\b(?:sebungkus|segelas|sebutir|sebuah|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|\d+)\b/g, ' ')
     .replace(/\b(?:bungkus|gelas|butir|buah|biji|cangkir|piring|botol|kg|liter|x)\b/g, ' ')
-    .replace(/\b(?:bayar|utang|ngutang|cicil|lunas|kembalian|uang|kas|masuk|keluar|beli|laku|ambil|tadi|pagi|siang|sore|malam)\b/g, ' ')
+    .replace(/\b(?:bayar|utang|ngutang|cicil|lunas|kembalian|uang|kas|masuk|keluar|beli|laku|ambil|tadi|pagi|siang|sore|malam|masih|tinggal|ada|berapa|stok)\b/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
